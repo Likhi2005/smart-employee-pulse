@@ -1,0 +1,38 @@
+export const taskList = [
+    {
+        id: 1,
+        title: 'Complete project proposal',
+        description: 'Finish Q2 project proposal for review',
+        dueDate: '2024-03-28',
+        priority: 'high',
+        status: 'in-progress',
+        progress: 75,
+    },
+    {
+        id: 2,
+        title: 'Code review',
+        description: 'Review pull requests from team members',
+        dueDate: '2024-03-27',
+        priority: 'medium',
+        status: 'pending',
+        progress: 0,
+    },
+    {
+        id: 3,
+        title: 'Team meeting',
+        description: 'Weekly sync with engineering team',
+        dueDate: '2024-03-27',
+        priority: 'medium',
+        status: 'pending',
+        progress: 0,
+    },
+    {
+        id: 4,
+        title: 'Update documentation',
+        description: 'Update API documentation',
+        dueDate: '2024-03-30',
+        priority: 'low',
+        status: 'pending',
+        progress: 0,
+    },
+]
