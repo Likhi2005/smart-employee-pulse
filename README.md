@@ -113,10 +113,38 @@ A comprehensive web platform that:
 
 ### Overview
 This section tracks project progress, completed tasks, and blockers on a weekly basis. Team members rotate responsibilities to ensure knowledge sharing and balanced workload.
+---
+
+## 👥 Team Members
+
+### Core Development Team (6 Members)
+
+##### Team Lead: Likhith S Gowda
+
+#### **WEEK 1: Documentation Phase**
+| # | Name | Role | Responsibility | Contact |
+|---|------|------|-----------------|---------|
+| 1 | **Likhith S** | Team Leader | PRS Documentation | |
+| 2 | **Yaswan** | Marketing | Ppt Document | |
+| 3 | **Kushal** | Custmer Contact Lead | Project Analysis | |
+| 4 | **Tharun** | Testing | Problem statement Documentation | |
+| 5 | **Sulthan** | UI/UX | PRS Documentation | |
+| 6 | **Sumanth** | Developer | Project Requirements | |
+
+#### **WEEK 2: Development & Marketing Phase**
+| # | Name | Role | Responsibility | Contact |
+|---|------|------|-----------------|---------|
+| 1 | **Likhith S** | Team Leader | Employee Dashboard | |
+| 2 | **Yaswan** | Marketing | Customer Reaching | |
+| 3 | **Kushal** | Custmer Contact Lead | Marketing(Survey through Online) | |
+| 4 | **Tharun** | Testing | Customer Reaching | |
+| 5 | **Sulthan** | UI/UX | UI development | |
+| 6 | **Sumanth** | Developer | Integration, data flow | |
 
 ---
 
-### **WEEK 1: Documentation & Foundation (Mar 18 - Mar 24, 2024)**
+# ------ Upcoming Weeks -------
+### **WEEK 3: Documentation & Foundation (Mar 18 - Mar 24, 2024)**
 
 **Status:** ✅ **COMPLETED**
 
@@ -136,7 +164,7 @@ This section tracks project progress, completed tasks, and blockers on a weekly 
 - **Component Library:** 7 components ready
 - **Mock Data Files:** 7 files created
 
-#### Team Assignments - WEEK 1
+#### Team Assignments - WEEK 3
 
 | Member # | Name | Role | Tasks | Status |
 |----------|------|------|-------|--------|
@@ -165,7 +193,7 @@ This section tracks project progress, completed tasks, and blockers on a weekly 
 
 ---
 
-### **WEEK 2: Customer & Marketing Development (Mar 25 - Mar 31, 2024)**
+### **WEEK 4: Customer & Marketing Development (Mar 25 - Mar 31, 2024)**
 
 **Status:** 🚀 **IN PROGRESS**
 
@@ -179,7 +207,7 @@ This section tracks project progress, completed tasks, and blockers on a weekly 
 - [x] Task list display
 - [x] AI Assistant feature showcase
 
-#### Task Distribution - WEEK 2
+#### Task Distribution - WEEK 4
 
 | Member # | Name | Department | Tasks | Progress |
 |----------|------|------------|-------|----------|
@@ -229,34 +257,4 @@ This section tracks project progress, completed tasks, and blockers on a weekly 
 - Full feature testing and QA
 - Customer beta testing setup
 - Marketing launch preparation
-
----
-
-## 👥 Team Members
-
-### Core Development Team (7 Members)
-
-##### Team Lead: Likhith S Gowda
-
-#### **WEEK 1: Documentation Phase**
-| # | Name | Role | Responsibility | Contact |
-|---|------|------|-----------------|---------|
-| 1 | **___ Likhith S** | Team Leader | PRS Documentation | |
-| 2 | **___ Yaswan** | Marketing | Ppt Document | |
-| 3 | **___ Kushal** | Custmer Contact Lead | Project Analysis | |
-| 4 | **___ K.Tharun** | Testing | Problem statement Documentation | |
-| 5 | **___ Sulthan** | UI/UX | PRS Documentation | |
-| 6 | **___ Sumanth** | Developer | Project Requirements | |
-
-#### **WEEK 2: Development & Marketing Phase**
-| # | Name | Role | Responsibility | Contact |
-|---|------|------|-----------------|---------|
-| 1 | **___ Likhith S** | Team Leader | Employee Dashboard | |
-| 2 | **___ Yaswan** | Marketing | Customer Reaching | |
-| 3 | **___ Kushal** | Custmer Contact Lead | Marketing(Survey through Online) | |
-| 4 | **___ K.Tharun** | Testing | Customer Reaching | |
-| 5 | **___ Sulthan** | UI/UX | UI development | |
-| 6 | **___ Sumanth** | Developer | Integration, data flow | |
-
----
 
