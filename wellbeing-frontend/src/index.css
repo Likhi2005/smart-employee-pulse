@@ -1,90 +1,99 @@
-@import 'tailwindcss/base';
-@import 'tailwindcss/components';
-@import 'tailwindcss/utilities';
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-/* Custom fonts */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700&display=swap');
-
-* {
-  @apply antialiased;
-}
-
-html {
-  @apply scroll-smooth;
-}
-
-body {
-  @apply bg-background text-text font-sans;
-  font-family: 'Inter', sans-serif;
-}
-
-h1, h2, h3, h4, h5, h6 {
-  font-family: 'Plus Jakarta Sans', sans-serif;
-  @apply font-bold;
-}
-
-h1 {
-  @apply text-4xl md:text-5xl;
-}
-
-h2 {
-  @apply text-3xl md:text-4xl;
-}
-
-h3 {
-  @apply text-2xl md:text-3xl;
-}
-
-/* Reusable component classes */
-@layer components {
-  .btn-primary {
-    @apply px-6 py-3 bg-gradient-blue text-white font-semibold rounded-lg hover:shadow-lg transition-all duration-300 hover:scale-105;
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 222.2 47.4% 11.2%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 222.2 84% 4.9%;
+    --radius: 0.5rem;
   }
 
-  .btn-secondary {
-    @apply px-6 py-3 bg-gradient-purple text-white font-semibold rounded-lg hover:shadow-lg transition-all duration-300 hover:scale-105;
-  }
-
-  .btn-outline {
-    @apply px-6 py-3 border-2 border-primary text-primary font-semibold rounded-lg hover:bg-primary hover:text-white transition-all duration-300;
-  }
-
-  .card {
-    @apply bg-card rounded-xl shadow-md hover:shadow-xl transition-shadow duration-300 p-6;
-  }
-
-  .card-elevated {
-    @apply bg-card rounded-xl shadow-lg hover:shadow-2xl transition-shadow duration-300 p-6;
-  }
-
-  .container-responsive {
-    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 210 40% 98%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 212.7 26.8% 83.9%;
   }
 }
 
-/* Dark Theme Variables */
-:root {
-  --primary-dark: #1a1a2e;
-  --secondary-dark: #16213e;
-  --accent-dark: #0f3460;
-  --card-dark: #2a2a3e;
-  --text-light: #e4e4e7;
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+  }
+
+  @supports (scroll-behavior: smooth) {
+    html {
+      scroll-behavior: smooth;
+    }
+  }
 }
 
-/* Dark Mode Utilities */
-.dark-bg {
-  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+/* Custom animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
-.dark-card {
-  background-color: #2a2a3e;
-  border: 1px solid #403f56;
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
-.dark-input {
-  @apply bg-gray-800 border-gray-700 text-white placeholder-gray-500;
+.animate-fadeIn {
+  animation: fadeIn 0.5s ease-out;
 }
 
-.dark-input:focus {
-  @apply border-blue-500 ring-blue-500;
+.animate-slideUp {
+  animation: slideUp 0.5s ease-out;
 }
