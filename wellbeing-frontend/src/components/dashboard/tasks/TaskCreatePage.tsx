@@ -322,6 +322,16 @@ export function TaskCreatePage() {
         setStep(3)
     }
 
+    const handleContinueToReview = () => {
+        if (!selectedEmployeeId) {
+            setError('Please select an assignee first.')
+            return
+        }
+        setError('')
+        setMaxUnlockedStep(4)
+        setStep(4)
+    }
+
     const handleSmartAssign = async () => {
         setIsSmartAssigning(true)
         setError('')
@@ -350,12 +360,11 @@ export function TaskCreatePage() {
         }
     }
 
-    const handleConfirmAssign = async () => {
+    const handleFinalAssign = async () => {
         if (!createdTaskId || !selectedEmployeeId) return
         setIsAssigning(true)
         setError('')
-        setTaskState('ASSIGNED')
-
+        
         try {
             await assignTask({
                 taskId: createdTaskId,
@@ -363,10 +372,8 @@ export function TaskCreatePage() {
                 assignmentMode: 'manual',
                 requiredSkills: parseSkills(enrich.skills),
             })
+            setTaskState('ASSIGNED')
             setSuccess('Task assigned successfully.')
-            setMaxUnlockedStep(4)
-            setStep(4)
-            setTaskState('REVIEW_PENDING')
         } catch (err: any) {
             setTaskState('ASSIGNABLE')
             setError(err?.response?.data?.error || err?.response?.data?.message || 'Assignment failed.')
@@ -442,30 +449,34 @@ export function TaskCreatePage() {
 
             <div className="grid grid-cols-1 gap-4 p-4 sm:p-5 xl:grid-cols-2">
                 {(step === 1 || step === 2) && (
-                    <TaskCreateFormPanel
-                        step={step}
-                        draftValues={draft}
-                        enrichValues={enrich}
-                        onChangeDraft={setDraft}
-                        onChangeEnrich={setEnrich}
-                        onContinue={step === 1 ? handleContinueFromDraft : handleContinueFromEnrich}
-                        onBack={step === 2 ? () => setStep(1) : undefined}
-                        isSubmitting={isCreatingTask}
-                    />
+                    <div className="xl:col-span-2 xl:mx-auto xl:w-2/3">
+                        <TaskCreateFormPanel
+                            step={step}
+                            draftValues={draft}
+                            enrichValues={enrich}
+                            onChangeDraft={setDraft}
+                            onChangeEnrich={setEnrich}
+                            onContinue={step === 1 ? handleContinueFromDraft : handleContinueFromEnrich}
+                            onBack={step === 2 ? () => setStep(1) : undefined}
+                            isSubmitting={isCreatingTask}
+                        />
+                    </div>
                 )}
 
                 {step === 3 && (
-                    <TaskAssignPanel
-                        employees={employeesForAssign}
-                        allCandidates={employeesForAssign}
-                        selectedEmployeeId={selectedEmployeeId}
-                        onSelectEmployee={setSelectedEmployeeId}
-                        onSmartAssign={handleSmartAssign}
-                        onContinue={handleConfirmAssign}
-                        isSmartAssigning={isSmartAssigning || isAssigning}
-                        disabled={!createdTaskId || isAssigning}
-                        showExplainability
-                    />
+                    <div className="xl:col-span-2">
+                        <TaskAssignPanel
+                            employees={employeesForAssign}
+                            allCandidates={employeesForAssign}
+                            selectedEmployeeId={selectedEmployeeId}
+                            onSelectEmployee={setSelectedEmployeeId}
+                            onSmartAssign={handleSmartAssign}
+                            onContinue={handleContinueToReview}
+                            isSmartAssigning={isSmartAssigning}
+                            disabled={!createdTaskId}
+                            showExplainability
+                        />
+                    </div>
                 )}
 
                 {step === 4 && (
@@ -473,34 +484,137 @@ export function TaskCreatePage() {
                         <h3 className="text-lg font-semibold text-neutral-100">Review Summary</h3>
                         <p className="mt-1 text-sm text-neutral-400">Final confirmation snapshot for audit and confidence.</p>
 
-                        <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
-                            <div className="rounded-lg border border-neutral-800 bg-neutral-900 p-3 text-sm text-neutral-300">
-                                <p className="text-neutral-500">Task</p>
-                                <p className="mt-1 font-medium text-neutral-100">{draft.title || '-'}</p>
-                                <p className="mt-2">{draft.description || '-'}</p>
+                        <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
+                            {/* Task Details Section */}
+                            <div className="space-y-4">
+                                <div className="rounded-xl border border-neutral-800 bg-neutral-900/50 p-5">
+                                    <h4 className="mb-4 text-sm font-semibold text-neutral-300 border-b border-neutral-800 pb-2">Core Details</h4>
+                                    <div className="space-y-3">
+                                        <div>
+                                            <p className="text-xs text-neutral-500">Title</p>
+                                            <p className="mt-0.5 text-sm font-medium text-neutral-100">{draft.title || '-'}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-xs text-neutral-500">Description</p>
+                                            <p className="mt-0.5 text-sm text-neutral-300 whitespace-pre-wrap">{draft.description || '-'}</p>
+                                        </div>
+                                        <div className="grid grid-cols-3 gap-4">
+                                            <div>
+                                                <p className="text-xs text-neutral-500">Effort</p>
+                                                <p className="mt-0.5 text-sm text-neutral-200">{draft.effort} hrs</p>
+                                            </div>
+                                            <div>
+                                                <p className="text-xs text-neutral-500">Priority</p>
+                                                <span className={`mt-1 inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
+                                                    draft.priority === 'high' ? 'bg-red-500/20 text-red-400' :
+                                                    draft.priority === 'medium' ? 'bg-amber-500/20 text-amber-400' :
+                                                    'bg-emerald-500/20 text-emerald-400'
+                                                }`}>
+                                                    {draft.priority}
+                                                </span>
+                                            </div>
+                                            <div>
+                                                <p className="text-xs text-neutral-500">Due Date</p>
+                                                <p className="mt-0.5 text-sm text-neutral-200">{draft.dueDate || 'Not set'}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
-                            <div className="rounded-lg border border-neutral-800 bg-neutral-900 p-3 text-sm text-neutral-300">
-                                <p className="text-neutral-500">Assignment</p>
-                                <p className="mt-1 font-medium text-neutral-100">{selectedEmployee?.fullName || 'Unassigned'}</p>
-                                <p className="mt-2">{selectedEmployee?.email || '-'}</p>
+
+                            {/* Enrichment & Assignment Section */}
+                            <div className="space-y-4">
+                                <div className="rounded-xl border border-neutral-800 bg-neutral-900/50 p-5">
+                                    <h4 className="mb-4 text-sm font-semibold text-neutral-300 border-b border-neutral-800 pb-2">Enrichment Context</h4>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <p className="text-xs text-neutral-500">Department</p>
+                                            <p className="mt-0.5 text-sm text-neutral-200">{enrich.department || 'Any'}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-xs text-neutral-500">Skills Required</p>
+                                            <div className="mt-1 flex flex-wrap gap-1">
+                                                {parseSkills(enrich.skills).length > 0 ? (
+                                                    parseSkills(enrich.skills).map(skill => (
+                                                        <span key={skill} className="rounded-md bg-neutral-800 px-2 py-0.5 text-xs text-neutral-300">{skill}</span>
+                                                    ))
+                                                ) : <span className="text-sm text-neutral-500">None</span>}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {(enrich.tags || enrich.dependencyRefs) && (
+                                        <div className="mt-3 grid grid-cols-2 gap-4">
+                                            {enrich.tags && (
+                                                <div>
+                                                    <p className="text-xs text-neutral-500">Tags</p>
+                                                    <p className="mt-0.5 text-sm text-neutral-200">{enrich.tags}</p>
+                                                </div>
+                                            )}
+                                            {enrich.dependencyRefs && (
+                                                <div>
+                                                    <p className="text-xs text-neutral-500">Dependencies</p>
+                                                    <p className="mt-0.5 text-sm text-neutral-200">{enrich.dependencyRefs}</p>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+                                    {enrich.acceptanceCriteria && (
+                                        <div className="mt-3">
+                                            <p className="text-xs text-neutral-500">Acceptance Criteria</p>
+                                            <p className="mt-0.5 text-sm text-neutral-300 whitespace-pre-wrap">{enrich.acceptanceCriteria}</p>
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-5">
+                                    <h4 className="mb-4 text-sm font-semibold text-amber-500/80 border-b border-amber-500/20 pb-2">Selected Assignee</h4>
+                                    <div className="flex items-center gap-4">
+                                        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-amber-500/20 text-lg font-bold text-amber-400">
+                                            {selectedEmployee?.fullName?.charAt(0) || '?'}
+                                        </div>
+                                        <div>
+                                            <p className="font-medium text-neutral-100">{selectedEmployee?.fullName || 'Unassigned'}</p>
+                                            <p className="text-sm text-neutral-400">{selectedEmployee?.email || '-'}</p>
+                                        </div>
+                                    </div>
+                                    {selectedEmployee && (
+                                        <div className="mt-3 rounded-lg bg-black/40 p-3">
+                                            <p className="text-xs text-amber-500">Why this candidate?</p>
+                                            <p className="mt-1 text-xs text-neutral-300">{selectedEmployee.reasons?.[0] || 'Selected from available ranking signals.'}</p>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         </div>
 
                         <div className="mt-4 flex flex-wrap items-center justify-end gap-2">
-                            <button
-                                type="button"
-                                onClick={() => setStep(3)}
-                                className="rounded-lg border border-neutral-700 bg-neutral-900 px-4 py-2 text-sm text-neutral-200 hover:bg-neutral-800"
-                            >
-                                Re-open Assignment
-                            </button>
-                            <button
-                                type="button"
-                                onClick={resetAll}
-                                className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-semibold text-neutral-950 hover:bg-amber-400"
-                            >
-                                Create Another Task
-                            </button>
+                            {taskState !== 'ASSIGNED' ? (
+                                <>
+                                    <button
+                                        type="button"
+                                        onClick={() => setStep(3)}
+                                        className="rounded-lg border border-neutral-700 bg-neutral-900 px-4 py-2 text-sm text-neutral-200 hover:bg-neutral-800"
+                                    >
+                                        Back to Assignment
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={handleFinalAssign}
+                                        disabled={isAssigning}
+                                        className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-semibold text-neutral-950 hover:bg-amber-400 disabled:opacity-50"
+                                    >
+                                        {isAssigning ? 'Assigning...' : 'Confirm & Assign Task'}
+                                    </button>
+                                </>
+                            ) : (
+                                <button
+                                    type="button"
+                                    onClick={resetAll}
+                                    className="rounded-lg border border-amber-500/50 bg-amber-500/10 px-4 py-2 text-sm font-semibold text-amber-500 hover:bg-amber-500/20"
+                                >
+                                    Create Another Task
+                                </button>
+                            )}
                         </div>
                     </section>
                 )}

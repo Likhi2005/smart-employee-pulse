@@ -45,6 +45,7 @@ export function TaskCreateFormPanel({
         const next: Record<string, string> = {}
         if (!draftValues.title.trim()) next.title = 'Task title is required'
         if (!draftValues.effort.trim() || Number(draftValues.effort) < 1) next.effort = 'Effort must be >= 1'
+        if (!draftValues.dueDate.trim()) next.dueDate = 'Due date is required'
         if (!draftValues.description.trim()) next.description = 'Description is required'
         return next
     }, [draftValues])
@@ -110,13 +111,15 @@ export function TaskCreateFormPanel({
                         </div>
 
                         <div>
-                            <label className="mb-1.5 block text-sm font-medium text-neutral-200">Due Date</label>
+                            <label className="mb-1.5 block text-sm font-medium text-neutral-200">Due Date <span className="text-red-400">*</span></label>
                             <input
                                 type="date"
                                 value={draftValues.dueDate}
                                 onChange={(e) => onChangeDraft({ ...draftValues, dueDate: e.target.value })}
+                                onBlur={() => setTouched((p) => ({ ...p, dueDate: true }))}
                                 className="h-11 w-full rounded-lg border border-neutral-700 bg-neutral-900 px-3 text-sm text-neutral-100 outline-none focus:border-amber-500/70"
                             />
+                            {touched.dueDate && errors.dueDate && <p className="mt-1 text-xs text-red-300">{errors.dueDate}</p>}
                         </div>
                     </div>
 
@@ -127,14 +130,14 @@ export function TaskCreateFormPanel({
                                 type="button"
                                 onClick={() => onChangeDraft({ ...draftValues, mandatory: !draftValues.mandatory })}
                                 className={[
-                                    'relative h-6 w-11 rounded-full transition-colors',
+                                    'relative flex h-6 w-11 items-center rounded-full transition-colors',
                                     draftValues.mandatory ? 'bg-amber-500' : 'bg-neutral-700',
                                 ].join(' ')}
                             >
                                 <span
                                     className={[
-                                        'absolute top-0.5 h-5 w-5 rounded-full bg-neutral-950 transition-transform',
-                                        draftValues.mandatory ? 'translate-x-5' : 'translate-x-0.5',
+                                        'inline-block h-5 w-5 transform rounded-full bg-neutral-950 transition-transform duration-200 ease-in-out',
+                                        draftValues.mandatory ? 'translate-x-[22px]' : 'translate-x-[2px]',
                                     ].join(' ')}
                                 />
                             </button>
