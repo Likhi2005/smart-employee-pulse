@@ -59,6 +59,7 @@ export function TaskCreatePage() {
     const templateId = searchParams.get('templateId')
 
     const [step, setStep] = useState<CreateStep>(1)
+    const [maxUnlockedStep, setMaxUnlockedStep] = useState<CreateStep>(1)
     const [taskState, setTaskState] = useState<TaskState>('DRAFT')
 
     const [draft, setDraft] = useState<DraftFormValues>(INITIAL_DRAFT)
@@ -232,6 +233,7 @@ export function TaskCreatePage() {
 
     const resetAll = () => {
         setStep(1)
+        setMaxUnlockedStep(1)
         setTaskState('DRAFT')
         setDraft(INITIAL_DRAFT)
         setEnrich(INITIAL_ENRICH)
@@ -242,6 +244,12 @@ export function TaskCreatePage() {
         setRankingState(null)
         setError('')
         setSuccess('')
+    }
+
+    const safeSetStep = (next: CreateStep) => {
+        if (next <= maxUnlockedStep) {
+            setStep(next)
+        }
     }
 
     const createTaskIfNeeded = async (): Promise<string | null> => {
@@ -287,7 +295,7 @@ export function TaskCreatePage() {
             return id
         } catch (err: any) {
             setTaskState('DRAFT')
-            setError(err?.response?.data?.message || 'Failed to create task.')
+            setError(err?.response?.data?.error || err?.response?.data?.message || 'Failed to create task.')
             return null
         } finally {
             setIsCreatingTask(false)
@@ -298,6 +306,7 @@ export function TaskCreatePage() {
         setError('')
         setSuccess('')
         setTaskState('VALIDATED')
+        setMaxUnlockedStep(2)
         setStep(2)
     }
 
@@ -309,6 +318,7 @@ export function TaskCreatePage() {
         const id = await createTaskIfNeeded()
         if (!id) return
         setTaskState('POLICY_VALIDATED')
+        setMaxUnlockedStep(3)
         setStep(3)
     }
 
@@ -334,7 +344,7 @@ export function TaskCreatePage() {
                 setError('No ranking suggestion available right now.')
             }
         } catch (err: any) {
-            setError(err?.response?.data?.message || 'Candidate ranking failed.')
+            setError(err?.response?.data?.error || err?.response?.data?.message || 'Candidate ranking failed.')
         } finally {
             setIsSmartAssigning(false)
         }
@@ -354,11 +364,12 @@ export function TaskCreatePage() {
                 requiredSkills: parseSkills(enrich.skills),
             })
             setSuccess('Task assigned successfully.')
+            setMaxUnlockedStep(4)
             setStep(4)
             setTaskState('REVIEW_PENDING')
         } catch (err: any) {
             setTaskState('ASSIGNABLE')
-            setError(err?.response?.data?.message || 'Assignment failed.')
+            setError(err?.response?.data?.error || err?.response?.data?.message || 'Assignment failed.')
         } finally {
             setIsAssigning(false)
         }
@@ -368,7 +379,8 @@ export function TaskCreatePage() {
         <section className="rounded-2xl border border-neutral-800 bg-neutral-950">
             <TaskCreateHeader
                 step={step}
-                onStepChange={setStep}
+                onStepChange={safeSetStep}
+                maxUnlockedStep={maxUnlockedStep}
                 onNewRequest={resetAll}
                 isSavingDraft={isSavingDraft}
                 onSettings={() => setSuccess('Settings panel can be connected next.')}

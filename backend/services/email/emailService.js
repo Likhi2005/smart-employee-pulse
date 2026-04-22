@@ -20,6 +20,15 @@ class EmailService {
             text: payload.text,
         });
     }
+
+    async sendTaskEventNotification({ to, subject, html, text }) {
+        return await this.provider.send({
+            to,
+            subject,
+            html,
+            text,
+        });
+    }
 }
 
 module.exports = new EmailService();

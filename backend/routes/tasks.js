@@ -19,6 +19,8 @@ const {
     policyValidationRequest,
     rankCandidatesValidation,
     createFromTemplateValidation,
+    taskStateValidation,
+    approveTaskValidation,
 } = require('../validators/taskValidators')
 
 const router = express.Router()
@@ -178,6 +180,24 @@ router.post(
     [taskIdentifierValidation[0]],
     handleValidationErrors,
     taskController.completeTask
+)
+
+router.post(
+    '/:taskId/state',
+    authenticate,
+    authorizeManager,
+    taskStateValidation,
+    handleValidationErrors,
+    taskController.updateTaskState
+)
+
+router.post(
+    '/:taskId/approve',
+    authenticate,
+    authorizeManager,
+    approveTaskValidation,
+    handleValidationErrors,
+    taskController.approveTask
 )
 
 router.get(

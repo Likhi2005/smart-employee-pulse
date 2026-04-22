@@ -8,6 +8,7 @@ interface TaskCreateHeaderProps {
     onNewRequest: () => void
     onSettings?: () => void
     isSavingDraft?: boolean
+    maxUnlockedStep?: CreateStep
 }
 
 const STEPS: Array<{ id: CreateStep; label: string }> = [
@@ -23,6 +24,7 @@ export function TaskCreateHeader({
     onNewRequest,
     onSettings,
     isSavingDraft = false,
+    maxUnlockedStep = 1,
 }: TaskCreateHeaderProps) {
     return (
         <div className="border-b border-neutral-800 bg-neutral-950/70 px-4 py-4 sm:px-5">
@@ -62,16 +64,19 @@ export function TaskCreateHeader({
                 {STEPS.map((item) => {
                     const isDone = item.id < step
                     const isActive = item.id === step
+                    const isLocked = item.id > maxUnlockedStep
                     return (
                         <button
                             key={item.id}
                             type="button"
-                            onClick={() => onStepChange(item.id)}
+                            onClick={() => !isLocked && onStepChange(item.id)}
+                            disabled={isLocked}
                             className={[
                                 'rounded-lg border px-3 py-2 text-left text-sm transition-colors',
                                 isActive
                                     ? 'border-amber-500/60 bg-amber-500/10 text-amber-300'
                                     : 'border-neutral-800 bg-neutral-900 text-neutral-300 hover:bg-neutral-800',
+                                isLocked ? 'cursor-not-allowed opacity-50' : '',
                             ].join(' ')}
                         >
                             <div className="flex items-center justify-between">

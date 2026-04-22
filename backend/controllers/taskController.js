@@ -9,6 +9,8 @@ const Leaderboard = require('../models/Leaderboard');
 const taskServices = require('../services/taskServices')
 const workloadService = require('../services/workloadService');
 const aiService = require('../services/aiService');
+const { emitDomainEvent } = require('../services/events/eventBus')
+const { TASK_EVENT_TYPES } = require('../services/events/eventTypes')
 
 const ruleEngineService = require('../services/ruleEngineService');
 
@@ -39,39 +41,51 @@ const logTaskHistory = async ({
     }
 };
 
+const publishTaskEvent = async ({
+    type,
+    taskId,
+    companyId,
+    actorId = null,
+    payload = {},
+    idempotencyKey,
+}) => {
+    try {
+        await emitDomainEvent({
+            type,
+            aggregateId: taskId,
+            actorId,
+            companyId,
+            payload,
+            idempotencyKey,
+        })
+    } catch (error) {
+        console.error('Publish task event failed:', {
+            type,
+            taskId,
+            message: error.message,
+        })
+    }
+}
+
 // ============================================================
 // 1. CREATE TASK
 // ============================================================
 
 const createTask = async (req, res) => {
-    console.log('=== CREATE TASK ENDPOINT HIT ===');
-    console.log('Request body:', JSON.stringify(req.body, null, 2));
-    console.log('Request headers:', req.headers);
-    console.log('Auth user:', req.user);
+    const traceId = `${Date.now()}-${Math.random().toString(16).slice(2, 8)}`;
 
     try {
-        // Step 1: Verify auth
-        if (!req.user) {
-            console.error('NO AUTH USER - req.user is undefined');
-            return res.status(401).json({ message: 'No authenticated user' });
-        }
+        console.log('[createTask] start', {
+            traceId,
+            body: req.body,
+            user: req.user,
+        });
 
-        if (!req.user.userId || !req.user.companyId) {
-            console.error('INCOMPLETE AUTH - missing userId or companyId:', req.user);
-            return res.status(401).json({ message: 'Invalid auth user data' });
-        }
-
-        console.log('✓ Auth verified. Creating task...');
-
-        // Step 2: Create task in service
         const task = await taskServices.createTask(req.body, {
             managerId: req.user.userId,
             companyId: req.user.companyId,
         });
 
-        console.log('✓ Task created successfully:', task);
-
-        // Step 3: Log task history
         try {
             await TaskHistory.create({
                 taskId: task._id,
@@ -85,29 +99,50 @@ const createTask = async (req, res) => {
                     priority: task.priority,
                     effort: task.effort,
                     riskLevel: task.riskLevel,
+                    traceId,
                 },
             });
-            console.log('✓ Task history logged');
         } catch (historyError) {
-            console.warn('⚠ TaskHistory create failed (non-blocking):', historyError.message);
+            console.error('[createTask] history write failed', {
+                traceId,
+                message: historyError.message,
+                stack: historyError.stack,
+            });
         }
 
-        // Step 4: Return response
-        console.log('✓ Returning success response');
+        await publishTaskEvent({
+            type: TASK_EVENT_TYPES.TaskCreated,
+            taskId: task._id,
+            companyId: req.user.companyId,
+            actorId: req.user.userId,
+            payload: {
+                taskId: task._id,
+                publicId: task.id,
+                title: task.title,
+                effort: task.effort,
+                priority: task.priority,
+            },
+            idempotencyKey: `TaskCreated:${task._id}:${traceId}`,
+        })
+
         return res.status(201).json({
             message: 'Task created successfully',
             task,
+            traceId,
         });
     } catch (error) {
-        console.error('❌ CREATE TASK ERROR');
-        console.error('Error message:', error.message);
-        console.error('Error stack:', error.stack);
-        console.error('Full error:', error);
+        console.error('[createTask] failed', {
+            traceId,
+            message: error.message,
+            name: error.name,
+            code: error.code,
+            stack: error.stack,
+        });
 
-        return res.status(500).json({
+        return res.status(error.statusCode || 500).json({
             message: 'Task creation failed',
             error: error.message,
-            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
+            traceId,
         });
     }
 };
@@ -211,14 +246,30 @@ const assignTask = async (req, res) => {
             companyId: req.user.companyId,
         })
 
-        return res.json({
+        const response = {
             message: 'Task assigned successfully',
             task: result.task,
             suggestion: result.suggestion,
             allCandidates: result.allCandidates,
             rejectedCandidates: result.rejectedCandidates,
             rankingState: result.rankingState,
+        }
+
+        await publishTaskEvent({
+            type: TASK_EVENT_TYPES.TaskAssigned,
+            taskId: result.task?._id,
+            companyId: req.user.companyId,
+            actorId: req.user.userId,
+            payload: {
+                taskId: result.task?._id,
+                assignedTo: result.task?.assignedTo?._id || result.task?.assignedTo,
+                assignmentSource: req.body.assignmentMode || 'manual',
+                topCandidateScore: result.suggestion?.score || null,
+            },
+            idempotencyKey: `TaskAssigned:${result.task?._id}:${result.task?.updatedAt || Date.now()}`,
         })
+
+        return res.json(response)
     } catch (error) {
         console.error('Assign task error:', error)
         return res.status(error.statusCode || 500).json({
@@ -232,7 +283,25 @@ const validateTaskPolicy = async (req, res) => {
     try {
         const result = await taskServices.validateTaskPolicy(req.body, {
             companyId: req.user.companyId,
+            actorId: req.user.userId,
         })
+
+        if (req.body.taskId) {
+            await publishTaskEvent({
+                type: TASK_EVENT_TYPES.PolicyValidated,
+                taskId: req.body.taskId,
+                companyId: req.user.companyId,
+                actorId: req.user.userId,
+                payload: {
+                    taskId: req.body.taskId,
+                    status: result.status,
+                    blockers: result.blockers,
+                    warnings: result.warnings,
+                    suggestions: result.suggestions,
+                },
+                idempotencyKey: `PolicyValidated:${req.body.taskId}:${result.metrics?.evaluatedAt || Date.now()}`,
+            })
+        }
 
         return res.json({
             message: 'Policy validation completed',
@@ -251,7 +320,23 @@ const rankTaskCandidates = async (req, res) => {
     try {
         const result = await taskServices.rankTaskCandidates(req.body, {
             companyId: req.user.companyId,
+            actorId: req.user.userId,
         })
+
+        if (req.body.taskId) {
+            await publishTaskEvent({
+                type: TASK_EVENT_TYPES.CandidatesRanked,
+                taskId: req.body.taskId,
+                companyId: req.user.companyId,
+                actorId: req.user.userId,
+                payload: {
+                    taskId: req.body.taskId,
+                    rankedCount: result.rankedCandidates?.length || 0,
+                    topCandidate: result.topCandidate || null,
+                },
+                idempotencyKey: `CandidatesRanked:${req.body.taskId}:${result.rankingState?.rankedAt || Date.now()}`,
+            })
+        }
 
         return res.json({
             message: 'Ranking completed',
@@ -273,10 +358,25 @@ const createTaskFromTemplate = async (req, res) => {
             companyId: req.user.companyId,
         })
 
-        return res.status(201).json({
+        const response = {
             message: 'Task created from template successfully',
             ...result,
+        }
+
+        await publishTaskEvent({
+            type: TASK_EVENT_TYPES.TaskEnriched,
+            taskId: result.task?._id,
+            companyId: req.user.companyId,
+            actorId: req.user.userId,
+            payload: {
+                taskId: result.task?._id,
+                templateId: req.body.templateId,
+                title: result.task?.title,
+            },
+            idempotencyKey: `TaskEnriched:${result.task?._id}:${req.body.templateId}`,
         })
+
+        return res.status(201).json(response)
     } catch (error) {
         console.error('Create task from template error:', error)
         return res.status(error.statusCode || 500).json({
@@ -351,6 +451,15 @@ const acceptTask = async (req, res) => {
         });
         await task.save();
 
+        await taskServices.transitionTaskState({
+            taskId: task._id,
+            companyId,
+            actorId: employeeId,
+            newState: 'ASSIGNED',
+            reason: 'Employee accepted assigned task',
+            metadata: { action: 'accepted' },
+        })
+
         await logTaskHistory({
             taskId: task._id,
             companyId,
@@ -371,6 +480,19 @@ const acceptTask = async (req, res) => {
                 status: task.status,
             },
         });
+
+        await publishTaskEvent({
+            type: TASK_EVENT_TYPES.TaskAccepted,
+            taskId: task._id,
+            companyId,
+            actorId: employeeId,
+            payload: {
+                taskId: task._id,
+                actorId: employeeId,
+                status: task.status,
+            },
+            idempotencyKey: `TaskAccepted:${task._id}:${task.updatedAt?.toISOString?.() || Date.now()}`,
+        })
     } catch (error) {
         console.error('Accept task error:', error);
         res.status(500).json({ message: 'Error accepting task', error: error.message });
@@ -412,6 +534,15 @@ const rejectTask = async (req, res) => {
         task.status = 'rejected';
         await task.save();
 
+        await taskServices.transitionTaskState({
+            taskId: task._id,
+            companyId,
+            actorId: employeeId,
+            newState: 'REJECTED',
+            reason: reason || 'Employee rejected task',
+            metadata: { action: 'rejected' },
+        })
+
         await logTaskHistory({
             taskId: task._id,
             companyId,
@@ -431,6 +562,19 @@ const rejectTask = async (req, res) => {
                 rejectionReason: reason || 'Not specified',
             },
         });
+
+        await publishTaskEvent({
+            type: TASK_EVENT_TYPES.TaskRejected,
+            taskId: task._id,
+            companyId,
+            actorId: employeeId,
+            payload: {
+                taskId: task._id,
+                actorId: employeeId,
+                reason: reason || null,
+            },
+            idempotencyKey: `TaskRejected:${task._id}:${task.updatedAt?.toISOString?.() || Date.now()}`,
+        })
     } catch (error) {
         console.error('Reject task error:', error);
         res.status(500).json({ message: 'Error rejecting task', error: error.message });
@@ -466,6 +610,15 @@ const completeTask = async (req, res) => {
         task.completedAt = new Date();
         task.riskLevel = 'low';
         await task.save();
+
+        await taskServices.transitionTaskState({
+            taskId: task._id,
+            companyId,
+            actorId: employeeId,
+            newState: 'REVIEW_PENDING',
+            reason: 'Task completed and awaiting manager approval',
+            metadata: { action: 'completed' },
+        })
 
         await logTaskHistory({
             taskId: task._id,
@@ -506,11 +659,133 @@ const completeTask = async (req, res) => {
             pointsEarned,
             totalPoints: leaderboard.points,
         });
+
+        await publishTaskEvent({
+            type: TASK_EVENT_TYPES.TaskCompleted,
+            taskId: task._id,
+            companyId,
+            actorId: employeeId,
+            payload: {
+                taskId: task._id,
+                actorId: employeeId,
+                completedAt: task.completedAt,
+                pointsEarned,
+            },
+            idempotencyKey: `TaskCompleted:${task._id}:${task.completedAt?.toISOString?.() || Date.now()}`,
+        })
     } catch (error) {
         console.error('Complete task error:', error);
         res.status(500).json({ message: 'Error completing task', error: error.message });
     }
 };
+
+const updateTaskState = async (req, res) => {
+    try {
+        const { taskId } = req.params
+        const { newState, reason } = req.body
+
+        const task = await taskServices.transitionTaskState({
+            taskId,
+            companyId: req.user.companyId,
+            actorId: req.user.userId,
+            newState,
+            reason: reason || 'State changed via explicit transition endpoint',
+            metadata: { source: 'state-endpoint' },
+        })
+
+        await publishTaskEvent({
+            type: TASK_EVENT_TYPES.TaskStateTransitioned,
+            taskId: task._id,
+            companyId: req.user.companyId,
+            actorId: req.user.userId,
+            payload: {
+                taskId: task._id,
+                taskState: task.taskState,
+                reason: reason || null,
+            },
+            idempotencyKey: `TaskStateTransitioned:${task._id}:${task.taskState}:${Date.now()}`,
+        })
+
+        return res.json({
+            message: 'Task state updated successfully',
+            task,
+        })
+    } catch (error) {
+        return res.status(error.statusCode || 500).json({
+            message: error.message || 'Failed to update task state',
+            error: error.message,
+        })
+    }
+}
+
+const approveTask = async (req, res) => {
+    try {
+        const { taskId } = req.params
+        const { notes = '' } = req.body
+        const companyId = req.user.companyId
+        const managerId = req.user.userId
+
+        const task = await Task.findOne({
+            ...taskServices.buildTaskLookupQuery(taskId),
+            companyId,
+            isDeleted: { $ne: true },
+        })
+
+        if (!task) {
+            return res.status(404).json({ message: 'Task not found' })
+        }
+
+        if (task.status !== 'completed') {
+            return res.status(400).json({
+                message: 'Only completed tasks can be approved',
+            })
+        }
+
+        await taskServices.transitionTaskState({
+            taskId: task._id,
+            companyId,
+            actorId: managerId,
+            newState: 'APPROVED',
+            reason: notes || 'Manager approved completed task',
+            metadata: { source: 'approve-endpoint' },
+        })
+
+        await logTaskHistory({
+            taskId: task._id,
+            companyId,
+            actorId: managerId,
+            action: 'updated',
+            fromStatus: task.status,
+            toStatus: task.status,
+            notes: notes || 'Task approved',
+            meta: { approval: true },
+        })
+
+        const refreshed = await Task.findById(task._id).lean()
+
+        await publishTaskEvent({
+            type: TASK_EVENT_TYPES.TaskApproved,
+            taskId: task._id,
+            companyId,
+            actorId: managerId,
+            payload: {
+                taskId: task._id,
+                notes,
+            },
+            idempotencyKey: `TaskApproved:${task._id}:${Date.now()}`,
+        })
+
+        return res.json({
+            message: 'Task approved successfully',
+            task: taskServices.serializeTask(refreshed),
+        })
+    } catch (error) {
+        return res.status(error.statusCode || 500).json({
+            message: error.message || 'Failed to approve task',
+            error: error.message,
+        })
+    }
+}
 
 // ============================================================
 // 7. GET ALL TEAM TASKS (Manager only)
@@ -1130,4 +1405,6 @@ module.exports = {
     validateTaskPolicy,
     rankTaskCandidates,
     createTaskFromTemplate,
+    updateTaskState,
+    approveTask,
 };

@@ -68,3 +68,6 @@ Event emitters instead of form-submit
 Async processing queues
 Audit trails auto-built from events
 This is where you scale to 1000s of tasks per day. Skip it for MVP.
+
+
+If you want, I can do the next pass to add a manager Event Log API (list/filter dead-letter/retry) so operations can monitor Phase 3 directly from UI.

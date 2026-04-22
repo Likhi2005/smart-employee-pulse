@@ -27,6 +27,18 @@ const VALID_HISTORY_ACTIONS = new Set([
     'deleted',
 ])
 
+const ALLOWED_STATE_TRANSITIONS = {
+    DRAFT: new Set(['VALIDATED', 'ENRICHED', 'REJECTED']),
+    VALIDATED: new Set(['ENRICHED', 'REJECTED']),
+    ENRICHED: new Set(['POLICY_VALIDATED', 'ASSIGNABLE', 'REJECTED']),
+    POLICY_VALIDATED: new Set(['ASSIGNABLE', 'REJECTED']),
+    ASSIGNABLE: new Set(['ASSIGNED', 'REJECTED']),
+    ASSIGNED: new Set(['REVIEW_PENDING', 'APPROVED', 'REJECTED']),
+    REVIEW_PENDING: new Set(['APPROVED', 'REJECTED']),
+    APPROVED: new Set(),
+    REJECTED: new Set(),
+}
+
 function isTaskPublicId(value) {
     return TASK_PUBLIC_ID_REGEX.test(String(value || ''))
 }
@@ -217,6 +229,69 @@ function buildSortObject(sortBy = 'createdAt', sortDir = 'desc') {
     return { [field]: direction }
 }
 
+function canTransitionTaskState(currentState, nextState) {
+    if (!currentState || !nextState) return false
+    if (currentState === nextState) return true
+    const allowed = ALLOWED_STATE_TRANSITIONS[currentState]
+    return Boolean(allowed && allowed.has(nextState))
+}
+
+function appendTaskStateHistory(task, {
+    state,
+    changedBy,
+    reason = '',
+    metadata = null,
+}) {
+    task.stateHistory = Array.isArray(task.stateHistory) ? task.stateHistory : []
+    task.stateHistory.push({
+        state,
+        changedAt: new Date(),
+        changedBy,
+        reason,
+        metadata,
+    })
+}
+
+async function transitionTaskState({
+    taskId,
+    companyId,
+    actorId,
+    newState,
+    reason = '',
+    metadata = null,
+}) {
+    const task = await Task.findOne({
+        ...buildTaskLookupQuery(taskId),
+        companyId,
+        isDeleted: { $ne: true },
+    })
+
+    if (!task) {
+        const error = new Error('Task not found')
+        error.statusCode = 404
+        throw error
+    }
+
+    if (!canTransitionTaskState(task.taskState || 'DRAFT', newState)) {
+        const error = new Error(`Invalid state transition from ${task.taskState || 'DRAFT'} to ${newState}`)
+        error.statusCode = 400
+        throw error
+    }
+
+    if ((task.taskState || 'DRAFT') !== newState) {
+        task.taskState = newState
+        appendTaskStateHistory(task, {
+            state: newState,
+            changedBy: actorId,
+            reason,
+            metadata,
+        })
+        await task.save()
+    }
+
+    return serializeTask(task)
+}
+
 async function generateNextTaskPublicId() {
     try {
         console.log('Incrementing counter...');
@@ -281,14 +356,26 @@ async function createTask(payload, { managerId, companyId }) {
             status: 'pending',
             riskLevel: payload.riskLevel || 'low',
             aiSuggestions: payload.aiSuggestions || null,
-            taskState: 'DRAFT',
+            taskState: 'ENRICHED',
             stateHistory: [
                 {
                     state: 'DRAFT',
                     changedAt: new Date(),
                     changedBy: managerId,
                     reason: 'Task created',
-                }
+                },
+                {
+                    state: 'VALIDATED',
+                    changedAt: new Date(),
+                    changedBy: managerId,
+                    reason: 'Base task validation passed',
+                },
+                {
+                    state: 'ENRICHED',
+                    changedAt: new Date(),
+                    changedBy: managerId,
+                    reason: 'Task persisted after enrich stage',
+                },
             ],
         };
         console.log('Task data:', JSON.stringify(taskData, null, 2));
@@ -461,10 +548,8 @@ async function assignTask(payload, { managerId, companyId }) {
         }
         : null
 
-    task.stateHistory = Array.isArray(task.stateHistory) ? task.stateHistory : []
-    task.stateHistory.push({
+    appendTaskStateHistory(task, {
         state: 'ASSIGNED',
-        changedAt: new Date(),
         changedBy: managerId,
         reason: isReassignment ? 'Task reassigned' : 'Task assigned',
         metadata: {
@@ -656,7 +741,7 @@ async function getTaskTemplates(companyId, query = {}) {
     }
 }
 
-async function validateTaskPolicy(payload, { companyId }) {
+async function validateTaskPolicy(payload, { companyId, actorId = null }) {
     const taskInput = {
         title: payload.title,
         description: payload.description || '',
@@ -666,10 +751,45 @@ async function validateTaskPolicy(payload, { companyId }) {
         isMandatory: Boolean(payload.isMandatory),
     }
 
-    return evaluateTaskPolicy({ taskInput, companyId })
+    const result = await evaluateTaskPolicy({ taskInput, companyId })
+
+    if (payload.taskId) {
+        if (result.status === 'block') {
+            await transitionTaskState({
+                taskId: payload.taskId,
+                companyId,
+                actorId,
+                newState: 'VALIDATED',
+                reason: 'Policy validation found blockers',
+                metadata: { blockers: result.blockers },
+            })
+        } else {
+            await transitionTaskState({
+                taskId: payload.taskId,
+                companyId,
+                actorId,
+                newState: 'POLICY_VALIDATED',
+                reason: 'Policy checks completed',
+                metadata: { warnings: result.warnings },
+            })
+
+            if (result.status === 'pass') {
+                await transitionTaskState({
+                    taskId: payload.taskId,
+                    companyId,
+                    actorId,
+                    newState: 'ASSIGNABLE',
+                    reason: 'Policy checks passed and task is assignable',
+                    metadata: { suggestions: result.suggestions },
+                })
+            }
+        }
+    }
+
+    return result
 }
 
-async function rankTaskCandidates(payload, { companyId }) {
+async function rankTaskCandidates(payload, { companyId, actorId = null }) {
     let taskInput = {
         title: payload.title,
         effort: Number(payload.effort || 1),
@@ -702,7 +822,24 @@ async function rankTaskCandidates(payload, { companyId }) {
         ? payload.requiredSkills
         : []
 
-    return rankCandidates({ companyId, taskInput, requiredSkills })
+    const result = await rankCandidates({ companyId, taskInput, requiredSkills })
+
+    if (payload.taskId && (result?.rankedCandidates?.length || 0) > 0) {
+        try {
+            await transitionTaskState({
+                taskId: payload.taskId,
+                companyId,
+                actorId,
+                newState: 'ASSIGNABLE',
+                reason: 'Candidates ranked and task is ready for assignment',
+                metadata: { rankedCount: result.rankedCandidates.length },
+            })
+        } catch {
+            // Keep ranking functional even if state transition is not possible in current branch.
+        }
+    }
+
+    return result
 }
 
 async function createTaskFromTemplate(payload, { managerId, companyId }) {
@@ -751,6 +888,8 @@ module.exports = {
     buildTaskLookupQuery,
     buildTaskListQuery,
     buildSortObject,
+    canTransitionTaskState,
+    transitionTaskState,
     generateNextTaskPublicId,
     createTask,
     findTaskByIdentifier,

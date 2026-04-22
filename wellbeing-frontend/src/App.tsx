@@ -11,12 +11,9 @@ import { LoginPage } from '@/pages/LoginPage'
 import { RegisterPage } from '@/pages/RegisterPage'
 import { LandingPage } from '@/pages/LandingPage'
 import ManagerDashboardPage from '@/pages/ManagerDashboardPage'
-// import StatsPage from '@/pages/StatsPage';
+import EmployeeDashboardPage from '@/pages/EmployeeDashboardPage'
 import { useAuth } from '@/hooks/useAuth'
 
-// Placeholder components (we'll build these next)
-// const ManagerDashboard = () => <div className="p-8">Manager Dashboard - Coming Soon</div>
-const EmployeeDashboard = () => <div className="p-8">Employee Dashboard - Coming Soon</div>
 const UnauthorizedPage = () => <div className="p-8">Unauthorized Access</div>
 
 const App: React.FC = () => {
@@ -38,7 +35,6 @@ const App: React.FC = () => {
               </ProtectedRoute>
             }
           />
-
           <Route
             path="/dashboard/manager"
             element={<Navigate to="/dashboard/manager/overview" replace />}
@@ -46,15 +42,15 @@ const App: React.FC = () => {
 
           {/* Employee protected routes */}
           <Route
-            path="/dashboard/employee"
+            path="/dashboard/employee/*"
             element={
               <ProtectedRoute requiredRole="employee">
-                <EmployeeDashboard />
+                <EmployeeDashboardPage />
               </ProtectedRoute>
             }
           />
 
-          {/* Generic dashboard (redirects to role-specific) */}
+          {/* Generic dashboard (redirects by role) */}
           <Route
             path="/dashboard"
             element={
@@ -73,13 +69,13 @@ const App: React.FC = () => {
   )
 }
 
-// Helper component to redirect to role-specific dashboard
 const DashboardRedirect: React.FC = () => {
   const { user } = useAuth()
 
   if (user?.role === 'manager') {
     return <Navigate to="/dashboard/manager" replace />
   }
+
   return <Navigate to="/dashboard/employee" replace />
 }
 

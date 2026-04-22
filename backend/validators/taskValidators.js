@@ -173,12 +173,23 @@ const taskStateValidation = [
 ]
 
 const policyValidationRequest = [
+    body('taskId').optional().custom((value) => {
+        if (!value) return true
+        if (TASK_PUBLIC_ID_REGEX.test(String(value))) return true
+        if (mongoose.Types.ObjectId.isValid(value)) return true
+        throw new Error('taskId must be Mongo ID or TASK-XXXX')
+    }),
     body('title').optional().trim(),
     body('description').optional().trim(),
     body('effort').optional().isInt({ min: 1 }).withMessage('effort must be >=1'),
     body('priority').optional().isIn(['low', 'medium', 'high']),
     body('dueDate').optional({ nullable: true, checkFalsy: true }).isISO8601(),
     body('isMandatory').optional().isBoolean(),
+]
+
+const approveTaskValidation = [
+    ...taskIdentifierValidation,
+    body('notes').optional().trim(),
 ]
 
 const rankCandidatesValidation = [
@@ -224,4 +235,5 @@ module.exports = {
     policyValidationRequest,
     rankCandidatesValidation,
     createFromTemplateValidation,
+    approveTaskValidation,
 }
