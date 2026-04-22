@@ -39,7 +39,8 @@ export const NavMenuGroup: React.FC<NavMenuGroupProps> = ({
             <Link to={to}>
                 <motion.div
                     className={cn(
-                        'w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors duration-200 cursor-pointer',
+                        'w-full flex items-center rounded-lg transition-colors duration-200 cursor-pointer',
+                        isExpanded ? 'gap-3 px-3 py-2' : 'justify-center p-2',
                         isActive
                             ? 'bg-amber-900/30 text-amber-400 border border-amber-800/50'
                             : 'text-neutral-300 hover:bg-neutral-800 hover:text-neutral-100'

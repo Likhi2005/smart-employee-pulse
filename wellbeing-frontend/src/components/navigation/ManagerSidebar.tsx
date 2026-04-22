@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import {
     BarChart3,
     CheckSquare,
@@ -7,17 +7,17 @@ import {
     Zap,
     Trophy,
     ChevronLeft,
-    TrendingUp,
+    ChevronRight,
+    Settings,
+    LogOut,
 } from 'lucide-react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { SidebarIconRail } from './shared/SidebarIconRail'
 import { SidebarSearch } from './shared/SidebarSearch'
 import { NavMenuGroup } from './shared/NavMenuGroup'
 import { MenuSection } from './shared/MenuSection'
 
 export const ManagerSidebar: React.FC = () => {
-    const [isDetailExpanded, setIsDetailExpanded] = useState(true)
-    const [activeMenuItemPath, setActiveMenuItemPath] = useState('/dashboard/manager/overview')
+    const [isExpanded, setIsExpanded] = useState(true)
     const navigate = useNavigate()
     const location = useLocation()
 
@@ -41,21 +41,6 @@ export const ManagerSidebar: React.FC = () => {
                     },
                 ],
             },
-            // {
-            //     title: 'Analytics',
-            //     items: [
-            //         {
-            //             icon: BarChart3,
-            //             label: 'Statistics',
-            //             to: '/dashboard/manager/stats',
-            //             subItems: [
-            //                 { icon: BarChart3, label: 'Overview', to: '/dashboard/manager/stats' },
-            //                 { icon: Users, label: 'Employees', to: '/dashboard/manager/stats?section=employees' },
-            //                 { icon: TrendingUp, label: 'Trends', to: '/dashboard/manager/stats?section=trends' },
-            //             ],
-            //         },
-            //     ],
-            // },
             {
                 title: 'Management',
                 items: [
@@ -82,7 +67,6 @@ export const ManagerSidebar: React.FC = () => {
                         to: '/dashboard/manager/team',
                         subItems: [
                             { icon: Users, label: 'All Members', to: '/dashboard/manager/team' },
-                            // { icon: BarChart3, label: 'Performance', to: '/dashboard/manager/team?section=performance' },
                             { icon: Zap, label: 'Workload Status', to: '/dashboard/manager/team?section=workload' },
                         ],
                     },
@@ -102,93 +86,112 @@ export const ManagerSidebar: React.FC = () => {
     }
 
     useEffect(() => {
-        setActiveMenuItemPath(location.pathname)
-        setIsDetailExpanded(true)
+        // Optional: auto-expand or handle active state based on route
     }, [location.pathname])
 
     const getBasePath = (path: string) => path.split('?')[0]
     const currentBasePath = getBasePath(location.pathname)
 
-    const iconRailItems = [
-        {
-            icon: BarChart3,
-            to: '/dashboard/manager/overview',
-            tooltip: 'Overview',
-            isActive: currentBasePath === '/dashboard/manager/overview',
-        },
-        {
-            icon: CheckSquare,
-            to: '/dashboard/manager/tasks',
-            tooltip: 'Tasks',
-            isActive: currentBasePath === '/dashboard/manager/tasks',
-        },
-        {
-            icon: Users,
-            to: '/dashboard/manager/team',
-            tooltip: 'Team',
-            isActive: currentBasePath === '/dashboard/manager/team',
-        },
-        {
-            icon: Trophy,
-            to: '/dashboard/manager/leaderboard',
-            tooltip: 'Leaderboard',
-            isActive: currentBasePath === '/dashboard/manager/leaderboard',
-        },
-    ]
-
     return (
-        <div className="flex">
-            <SidebarIconRail
-                items={iconRailItems}
-                onLogout={handleLogout}
-                isDetailExpanded={isDetailExpanded}
-                onToggleDetail={() => setIsDetailExpanded(!isDetailExpanded)}
-            />
-
-            <motion.aside
-                animate={{ width: isDetailExpanded ? 320 : 0, opacity: isDetailExpanded ? 1 : 0 }}
-                transition={{ duration: 0.3, ease: 'easeInOut' }}
-                className="bg-black h-screen border-r border-neutral-800 flex flex-col overflow-hidden"
-            >
-                <div className="flex items-center justify-between p-4 border-b border-neutral-800">
-                    <div className="font-semibold text-neutral-50 text-lg">Navigation</div>
-                    <motion.button
-                        onClick={() => setIsDetailExpanded(false)}
-                        whileHover={{ scale: 1.05 }}
-                        className="p-1 hover:bg-neutral-800 rounded-md text-neutral-400 hover:text-neutral-200"
+        <motion.aside
+            animate={{ width: isExpanded ? 280 : 80 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+            className="h-screen bg-neutral-950 border-r border-neutral-800 flex flex-col z-20 relative overflow-hidden shrink-0"
+        >
+            {/* Header / Logo */}
+            <div className="h-16 flex items-center px-4 border-b border-neutral-800/50 shrink-0 justify-between">
+                <div className="flex items-center gap-3 overflow-hidden">
+                    <div className="size-8 rounded bg-amber-600 flex items-center justify-center shrink-0">
+                        <span className="text-white font-bold text-sm">WP</span>
+                    </div>
+                    <AnimatePresence>
+                        {isExpanded && (
+                            <motion.span
+                                initial={{ opacity: 0, x: -10 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                exit={{ opacity: 0, x: -10 }}
+                                className="font-semibold text-neutral-100 whitespace-nowrap"
+                            >
+                                Manager Portal
+                            </motion.span>
+                        )}
+                    </AnimatePresence>
+                </div>
+                
+                {isExpanded && (
+                    <button
+                        onClick={() => setIsExpanded(false)}
+                        className="p-1 rounded-md text-neutral-400 hover:bg-neutral-800 hover:text-neutral-200 transition-colors"
                     >
                         <ChevronLeft size={18} />
-                    </motion.button>
+                    </button>
+                )}
+            </div>
+
+            {/* Expand Button (when collapsed) */}
+            {!isExpanded && (
+                <div className="flex justify-center mt-4">
+                    <button
+                        onClick={() => setIsExpanded(true)}
+                        className="p-2 rounded-md bg-neutral-900 border border-neutral-800 text-neutral-400 hover:bg-neutral-800 hover:text-neutral-200 transition-colors"
+                    >
+                        <ChevronRight size={18} />
+                    </button>
                 </div>
+            )}
 
-                <div className="px-4 pt-4">
-                    <SidebarSearch isCollapsed={false} />
-                </div>
+            {/* Search Bar */}
+            <div className={`px-4 pt-4 shrink-0 transition-opacity duration-200 ${isExpanded ? 'opacity-100' : 'opacity-0 hidden'}`}>
+                <SidebarSearch isCollapsed={!isExpanded} />
+            </div>
 
-                <nav className="flex-1 overflow-y-auto px-2 py-4 space-y-6">
-                    {sidebarData.sections.map((section, idx) => (
-                        <MenuSection key={idx} title={section.title} isExpanded={isDetailExpanded}>
-                            {section.items.map((item, itemIdx) => {
-                                const itemBasePath = getBasePath(item.to)
-                                const isItemActive = currentBasePath === itemBasePath
+            {/* Navigation Sections */}
+            <nav className="flex-1 overflow-y-auto overflow-x-hidden px-3 py-4 space-y-6 stylish-scrollbar">
+                {sidebarData.sections.map((section, idx) => (
+                    <MenuSection key={idx} title={section.title} isExpanded={isExpanded}>
+                        {section.items.map((item, itemIdx) => {
+                            const itemBasePath = getBasePath(item.to)
+                            const isItemActive = currentBasePath === itemBasePath
 
-                                return (
-                                    <NavMenuGroup
-                                        key={itemIdx}
-                                        icon={item.icon}
-                                        label={item.label}
-                                        to={item.to}
-                                        subItems={item.subItems}
-                                        isExpanded={isDetailExpanded}
-                                        isActive={isItemActive}
-                                        badge={item.badge}
-                                    />
-                                )
-                            })}
-                        </MenuSection>
-                    ))}
-                </nav>
-            </motion.aside>
-        </div>
+                            return (
+                                <NavMenuGroup
+                                    key={itemIdx}
+                                    icon={item.icon}
+                                    label={item.label}
+                                    to={item.to}
+                                    subItems={item.subItems}
+                                    isExpanded={isExpanded}
+                                    isActive={isItemActive}
+                                    badge={item.badge}
+                                />
+                            )
+                        })}
+                    </MenuSection>
+                ))}
+            </nav>
+
+            {/* Bottom Actions */}
+            <div className="p-4 border-t border-neutral-800/50 shrink-0 flex flex-col gap-2">
+                <button
+                    className={`flex items-center gap-3 p-2 rounded-lg text-neutral-400 hover:bg-neutral-800 hover:text-neutral-200 transition-colors ${
+                        !isExpanded && 'justify-center'
+                    }`}
+                    title="Settings"
+                >
+                    <Settings size={20} className="shrink-0" />
+                    {isExpanded && <span className="font-medium text-sm whitespace-nowrap">Settings</span>}
+                </button>
+                <button
+                    onClick={handleLogout}
+                    className={`flex items-center gap-3 p-2 rounded-lg text-red-400/80 hover:bg-red-950/50 hover:text-red-400 transition-colors ${
+                        !isExpanded && 'justify-center'
+                    }`}
+                    title="Logout"
+                >
+                    <LogOut size={20} className="shrink-0" />
+                    {isExpanded && <span className="font-medium text-sm whitespace-nowrap">Logout</span>}
+                </button>
+            </div>
+        </motion.aside>
     )
 }
