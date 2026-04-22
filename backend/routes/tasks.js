@@ -1,121 +1,220 @@
-const express = require('express');
-const { body, param } = require('express-validator');
-const taskController = require('../controllers/taskController');
-const { authenticate, authorizeManager, authorizeEmployee } = require('../middlewares/auth');
+const express = require('express')
+const taskController = require('../controllers/taskController')
+const { authenticate, authorizeManager, authorizeEmployee } = require('../middlewares/auth')
+const {
+    handleValidationErrors,
+    taskIdentifierValidation,
+    createTaskValidation,
+    assignTaskValidation,
+    updateTaskValidation,
+    deleteTaskValidation,
+    createTaskTemplateValidation,
+    updateTaskTemplateValidation,
+    templateIdValidation,
+    taskHistoryByTaskValidation,
+    taskHistoryFeedValidation,
+    templateListValidation,
+    suggestAssigneeValidation,
+    taskListValidation,
+    policyValidationRequest,
+    rankCandidatesValidation,
+    createFromTemplateValidation,
+} = require('../validators/taskValidators')
 
-const router = express.Router();
+const router = express.Router()
 
-const handleValidationErrors = (req, res, next) => {
-    const errors = require('express-validator').validationResult(req);
-    if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
-    }
-    next();
-};
-
-// ============================================================
-// MANAGER ROUTES
-// ============================================================
-
-// 1. CREATE TASK
 router.post(
     '/create',
     authenticate,
     authorizeManager,
-    [
-        body('title').trim().notEmpty().withMessage('Title required'),
-        body('effort').isInt({ min: 1 }).withMessage('Effort must be at least 1'),
-        body('priority')
-            .optional()
-            .isIn(['low', 'medium', 'high'])
-            .withMessage('Invalid priority'),
-    ],
+    createTaskValidation,
     handleValidationErrors,
     taskController.createTask
-);
+)
 
-// 2. ASSIGN TASK
 router.post(
     '/assign',
     authenticate,
     authorizeManager,
-    [
-        body('taskId').notEmpty().withMessage('Task ID required'),
-        body('employeeId').notEmpty().withMessage('Employee ID required'),
-    ],
+    assignTaskValidation,
     handleValidationErrors,
     taskController.assignTask
-);
+)
 
-// 3. GET TEAM TASKS
+router.post(
+    '/templates',
+    authenticate,
+    authorizeManager,
+    createTaskTemplateValidation,
+    handleValidationErrors,
+    taskController.createTaskTemplate
+)
+
+router.get(
+    '/templates',
+    authenticate,
+    authorizeManager,
+    templateListValidation,
+    handleValidationErrors,
+    taskController.getTaskTemplates
+)
+
+router.get(
+    '/templates/:templateId',
+    authenticate,
+    authorizeManager,
+    templateIdValidation,
+    handleValidationErrors,
+    taskController.getTaskTemplateById
+)
+
+router.put(
+    '/templates/:templateId',
+    authenticate,
+    authorizeManager,
+    updateTaskTemplateValidation,
+    handleValidationErrors,
+    taskController.updateTaskTemplate
+)
+
+router.delete(
+    '/templates/:templateId',
+    authenticate,
+    authorizeManager,
+    templateIdValidation,
+    handleValidationErrors,
+    taskController.deleteTaskTemplate
+)
+
+router.get(
+    '/history',
+    authenticate,
+    authorizeManager,
+    taskHistoryFeedValidation,
+    handleValidationErrors,
+    taskController.getTaskHistoryFeed
+)
+
+router.get(
+    '/:taskId/history',
+    authenticate,
+    taskHistoryByTaskValidation,
+    handleValidationErrors,
+    taskController.getTaskHistoryByTaskId
+)
+
+router.get(
+    '/:taskId/suggest-assignee',
+    authenticate,
+    authorizeManager,
+    suggestAssigneeValidation,
+    handleValidationErrors,
+    taskController.getSuggestedAssignee
+)
+
+router.put(
+    '/:taskId',
+    authenticate,
+    authorizeManager,
+    updateTaskValidation,
+    handleValidationErrors,
+    taskController.updateTask
+)
+
+router.delete(
+    '/:taskId',
+    authenticate,
+    authorizeManager,
+    deleteTaskValidation,
+    handleValidationErrors,
+    taskController.deleteTask
+)
+
 router.get(
     '/team-tasks',
     authenticate,
     authorizeManager,
+    taskListValidation,
+    handleValidationErrors,
     taskController.getTeamTasks
-);
+)
 
-// 4. GET TEAM WORKLOAD
 router.get(
     '/team-workload',
     authenticate,
     authorizeManager,
     taskController.getTeamWorkload
-);
+)
 
-// ============================================================
-// EMPLOYEE ROUTES
-// ============================================================
-
-// 5. GET MY TASKS
 router.get(
     '/my-tasks',
     authenticate,
     authorizeEmployee,
     taskController.getMyTasks
-);
+)
 
-// 6. ACCEPT TASK
 router.post(
     '/accept',
     authenticate,
     authorizeEmployee,
-    [body('taskId').notEmpty().withMessage('Task ID required')],
+    [taskIdentifierValidation[0]],
     handleValidationErrors,
     taskController.acceptTask
-);
+)
 
-// 7. REJECT TASK
 router.post(
     '/reject',
     authenticate,
     authorizeEmployee,
-    [body('taskId').notEmpty().withMessage('Task ID required')],
+    [taskIdentifierValidation[0]],
     handleValidationErrors,
     taskController.rejectTask
-);
+)
 
-// 8. COMPLETE TASK
 router.post(
     '/complete',
     authenticate,
     authorizeEmployee,
-    [body('taskId').notEmpty().withMessage('Task ID required')],
+    [taskIdentifierValidation[0]],
     handleValidationErrors,
     taskController.completeTask
-);
+)
 
-// ============================================================
-// SHARED ROUTES (Both manager and employee)
-// ============================================================
-
-// 9. GET TASK DETAILS
 router.get(
     '/:taskId',
     authenticate,
-    [param('taskId').notEmpty().withMessage('Task ID required')],
+    taskIdentifierValidation,
     handleValidationErrors,
     taskController.getTaskDetails
-);
+)
 
-module.exports = router;
+
+// Policy validation and candidate ranking routes
+router.post(
+    '/policy/validate',
+    authenticate,
+    authorizeManager,
+    policyValidationRequest,
+    handleValidationErrors,
+    taskController.validateTaskPolicy
+)
+
+router.post(
+    '/rank-candidates',
+    authenticate,
+    authorizeManager,
+    rankCandidatesValidation,
+    handleValidationErrors,
+    taskController.rankTaskCandidates
+)
+
+router.post(
+    '/create-from-template',
+    authenticate,
+    authorizeManager,
+    createFromTemplateValidation,
+    handleValidationErrors,
+    taskController.createTaskFromTemplate
+)
+
+module.exports = router

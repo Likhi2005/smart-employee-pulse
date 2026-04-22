@@ -168,69 +168,69 @@ const changePassword = async (req, res) => {
     }
 };
 
-// ============================================================
-// 4. CREATE EMPLOYEE (Manager creates employee account)
-// ============================================================
-const createEmployee = async (req, res) => {
-    try {
-        const { fullName, email, department } = req.body;
-        const managerId = req.user.userId;
-        const companyId = req.user.companyId;
+// // ============================================================
+// // 4. CREATE EMPLOYEE (Manager creates employee account)
+// // ============================================================
+// const createEmployee = async (req, res) => {
+//     try {
+//         const { fullName, email, department } = req.body;
+//         const managerId = req.user.userId;
+//         const companyId = req.user.companyId;
 
-        // Validate input
-        if (!fullName || !email) {
-            return res.status(400).json({ message: 'Full name and email required' });
-        }
+//         // Validate input
+//         if (!fullName || !email) {
+//             return res.status(400).json({ message: 'Full name and email required' });
+//         }
 
-        // Check if email already exists in this company
-        const existingUser = await User.findOne({ email: email.toLowerCase(), companyId });
-        if (existingUser) {
-            return res.status(400).json({ message: 'Email already exists in company' });
-        }
+//         // Check if email already exists in this company
+//         const existingUser = await User.findOne({ email: email.toLowerCase(), companyId });
+//         if (existingUser) {
+//             return res.status(400).json({ message: 'Email already exists in company' });
+//         }
 
-        // Generate temporary password (user must change on first login)
-        const tempPassword = Math.random().toString(36).slice(-8); // Random 8-char password
+//         // Generate temporary password (user must change on first login)
+//         const tempPassword = Math.random().toString(36).slice(-8); // Random 8-char password
 
-        // Create employee
-        const employee = new User({
-            fullName,
-            email: email.toLowerCase(),
-            password: tempPassword,
-            role: 'employee',
-            companyId,
-            department: department || 'Not specified',
-            isPasswordChanged: false, // Employee must change password on first login
-        });
+//         // Create employee
+//         const employee = new User({
+//             fullName,
+//             email: email.toLowerCase(),
+//             password: tempPassword,
+//             role: 'employee',
+//             companyId,
+//             department: department || 'Not specified',
+//             isPasswordChanged: false, // Employee must change password on first login
+//         });
 
-        const savedEmployee = await employee.save();
+//         const savedEmployee = await employee.save();
 
-        // Create leaderboard entry for employee
-        const leaderboard = new Leaderboard({
-            userId: savedEmployee._id,
-            companyId,
-            points: 0,
-            tasksCompleted: 0,
-            gamePoints: 0,
-        });
+//         // Create leaderboard entry for employee
+//         const leaderboard = new Leaderboard({
+//             userId: savedEmployee._id,
+//             companyId,
+//             points: 0,
+//             tasksCompleted: 0,
+//             gamePoints: 0,
+//         });
 
-        await leaderboard.save();
+//         await leaderboard.save();
 
-        res.status(201).json({
-            message: 'Employee created successfully',
-            employee: {
-                id: savedEmployee._id,
-                fullName: savedEmployee.fullName,
-                email: savedEmployee.email,
-                department: savedEmployee.department,
-                role: 'employee',
-            },
-            tempPassword, // Send this to manager (should be shared securely)
-        });
-    } catch (error) {
-        console.error('Create employee error:', error);
-        res.status(500).json({ message: 'Employee creation failed', error: error.message });
-    }
-};
+//         res.status(201).json({
+//             message: 'Employee created successfully',
+//             employee: {
+//                 id: savedEmployee._id,
+//                 fullName: savedEmployee.fullName,
+//                 email: savedEmployee.email,
+//                 department: savedEmployee.department,
+//                 role: 'employee',
+//             },
+//             tempPassword, // Send this to manager (should be shared securely)
+//         });
+//     } catch (error) {
+//         console.error('Create employee error:', error);
+//         res.status(500).json({ message: 'Employee creation failed', error: error.message });
+//     }
+// };
 
 // ============================================================
 // 5. GET CURRENT USER (Verify token)
@@ -261,10 +261,40 @@ const getMe = async (req, res) => {
     }
 };
 
+
+// // ============================================================
+// // 6. GET COMPANY EMPLOYEES (Manager only)
+// // ============================================================
+// const getCompanyEmployees = async (req,res) => {
+//     try{
+//         const companyId = req.user.companyId;
+
+//         const employees = await User.find({
+//             companyId,
+//             role: 'employee',
+//             isActive: true,
+//         })
+//         .select('-password')
+//         .sort({ createdAt: -1 });
+
+//         res.json({
+//             message: 'Employees retrieved successfully',
+//             employees,
+//         });
+//     } catch (error) {
+//         console.error('Error fetching company employees:', error);
+//         res.status(500).json({
+//             message: 'Failed to fetch employees',
+//             error: error.message,
+//         });
+//     }
+// };
+
 module.exports = {
     registerCompany,
     login,
     changePassword,
-    createEmployee,
+    // createEmployee,
     getMe,
+    // getCompanyEmployees,
 };

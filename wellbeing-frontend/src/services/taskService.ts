@@ -1,214 +1,304 @@
-import api from './api';
-import { Task, TaskAssignment, TaskTemplate, TaskFilters, SortOptions } from '@/types/tasks';
+import api from '@/services/api'
 
-class TaskService {
-    // ===== TASK CRUD =====
+import type { CandidateRanking, PolicyValidationResult } from '@/types'
 
-    /**
-     * Get all team tasks with optional filters
-     */
-    async getTasks(filters?: TaskFilters, sort?: SortOptions) {
-        const params = new URLSearchParams();
+export async function validateTaskPolicy(payload: {
+    title?: string
+    description?: string
+    effort?: number
+    priority?: string
+    dueDate?: string
+    isMandatory?: boolean
+}) {
+    const response = await api.post('/tasks/policy/validate', payload)
+    return response.data?.result as PolicyValidationResult
+}
 
-        if (filters?.status) {
-            const statuses = Array.isArray(filters.status) ? filters.status : [filters.status];
-            params.append('status', statuses.join(','));
-        }
-
-        if (filters?.priority) {
-            const priorities = Array.isArray(filters.priority) ? filters.priority : [filters.priority];
-            params.append('priority', priorities.join(','));
-        }
-
-        if (filters?.assignedTo) {
-            params.append('assignedTo', filters.assignedTo);
-        }
-
-        if (filters?.searchQuery) {
-            params.append('search', filters.searchQuery);
-        }
-
-        if (sort) {
-            params.append('sortBy', sort.field);
-            params.append('sortDir', sort.direction);
-        }
-
-        try {
-            const response = await api.get(`/tasks/team-tasks?${params.toString()}`);
-            return response.data as Task[];
-        } catch (error) {
-            console.error('Failed to fetch tasks:', error);
-            throw error;
-        }
-    }
-
-    /**
-     * Get single task details
-     */
-    async getTaskById(taskId: string) {
-        try {
-            const response = await api.get(`/tasks/${taskId}`);
-            return response.data as Task;
-        } catch (error) {
-            console.error(`Failed to fetch task ${taskId}:`, error);
-            throw error;
-        }
-    }
-
-    /**
-     * Create new task
-     */
-    async createTask(data: Partial<Task>) {
-        try {
-            const response = await api.post('/tasks/create', {
-                title: data.title,
-                description: data.description,
-                effort: data.effort,
-                priority: data.priority,
-                dueDate: data.dueDate,
-                isMandatory: data.isMandatory,
-                skills: data.skills,
-                tags: data.tags
-            });
-            return response.data as Task;
-        } catch (error) {
-            console.error('Failed to create task:', error);
-            throw error;
-        }
-    }
-
-    /**
-     * Update task details
-     */
-    async updateTask(taskId: string, data: Partial<Task>) {
-        try {
-            const response = await api.put(`/tasks/${taskId}`, data);
-            return response.data as Task;
-        } catch (error) {
-            console.error(`Failed to update task ${taskId}:`, error);
-            throw error;
-        }
-    }
-
-    /**
-     * Update task status
-     */
-    async updateTaskStatus(taskId: string, status: Task['status']) {
-        return this.updateTask(taskId, { status });
-    }
-
-    /**
-     * Delete task
-     */
-    async deleteTask(taskId: string) {
-        try {
-            await api.delete(`/tasks/${taskId}`);
-        } catch (error) {
-            console.error(`Failed to delete task ${taskId}:`, error);
-            throw error;
-        }
-    }
-
-    // ===== ASSIGNMENT OPERATIONS =====
-
-    /**
-     * Assign task to employee
-     */
-    async assignTask(taskId: string, employeeId: string, options?: { aiSuggested?: boolean; notes?: string }) {
-        try {
-            const response = await api.post(`/tasks/${taskId}/assign`, {
-                assignedTo: employeeId,
-                aiSuggested: options?.aiSuggested || false,
-                notes: options?.notes
-            });
-            return response.data as Task;
-        } catch (error) {
-            console.error(`Failed to assign task ${taskId}:`, error);
-            throw error;
-        }
-    }
-
-    /**
-     * Get assignment history for a task
-     */
-    async getAssignmentHistory(taskId: string) {
-        try {
-            const response = await api.get(`/tasks/${taskId}/assignment-history`);
-            return response.data as TaskAssignment[];
-        } catch (error) {
-            console.error(`Failed to fetch assignment history for task ${taskId}:`, error);
-            throw error;
-        }
-    }
-
-    /**
-     * Reject task assignment
-     */
-    async rejectAssignment(taskId: string, reason: string) {
-        try {
-            const response = await api.post(`/tasks/${taskId}/reject`, { reason });
-            return response.data as Task;
-        } catch (error) {
-            console.error(`Failed to reject task ${taskId}:`, error);
-            throw error;
-        }
-    }
-
-    // ===== TEMPLATE OPERATIONS =====
-
-    /**
-     * Get all task templates
-     */
-    async getTemplates() {
-        try {
-            const response = await api.get('/tasks/templates');
-            return response.data as TaskTemplate[];
-        } catch (error) {
-            console.error('Failed to fetch templates:', error);
-            throw error;
-        }
-    }
-
-    /**
-     * Create task from template
-     */
-    async createFromTemplate(templateId: string, overrides?: Partial<Task>) {
-        try {
-            const response = await api.post(`/tasks/templates/${templateId}/create`, overrides);
-            return response.data as Task;
-        } catch (error) {
-            console.error(`Failed to create task from template ${templateId}:`, error);
-            throw error;
-        }
-    }
-
-    /**
-     * Save task as reusable template
-     */
-    async saveAsTemplate(taskId: string, templateName: string, isPublic: boolean = false) {
-        try {
-            const response = await api.post(`/tasks/${taskId}/save-as-template`, {
-                name: templateName,
-                isPublic
-            });
-            return response.data as TaskTemplate;
-        } catch (error) {
-            console.error(`Failed to save task ${taskId} as template:`, error);
-            throw error;
-        }
-    }
-
-    /**
-     * Delete template
-     */
-    async deleteTemplate(templateId: string) {
-        try {
-            await api.delete(`/tasks/templates/${templateId}`);
-        } catch (error) {
-            console.error(`Failed to delete template ${templateId}:`, error);
-            throw error;
-        }
+export async function rankTaskCandidates(payload: {
+    taskId?: string
+    effort?: number
+    dueDate?: string
+    isMandatory?: boolean
+    requiredSkills?: string[]
+}) {
+    const response = await api.post('/tasks/rank-candidates', payload)
+    return {
+        rankedCandidates: (response.data?.rankedCandidates || []) as CandidateRanking[],
+        topCandidate: response.data?.topCandidate as CandidateRanking | null,
+        rejectedCandidates: response.data?.rejectedCandidates || [],
+        rankingState: response.data?.rankingState || null,
     }
 }
 
-export default new TaskService();
+export async function createTaskFromTemplate(payload: {
+    templateId: string
+    title?: string
+    description?: string
+    effort?: number
+    priority?: TaskPriority
+    dueDate?: string
+    isMandatory?: boolean
+}) {
+    const response = await api.post('/tasks/create-from-template', payload)
+    return response.data
+}
+import type {
+    TaskItem,
+    TaskListResponse,
+    TaskHistoryItem,
+    TaskPriority,
+    TaskStatus,
+    TaskRiskLevel,
+} from '@/types'
+
+export interface TaskQueryParams {
+    page?: number
+    limit?: number
+    search?: string
+    status?: string
+    priority?: string
+    riskLevel?: string
+    employeeId?: string
+    id?: string
+    dueDate?: string
+    dueDateFrom?: string
+    dueDateTo?: string
+    sortBy?: 'createdAt' | 'updatedAt' | 'dueDate' | 'priority' | 'effort' | 'riskLevel' | 'status' | 'id'
+    sortDir?: 'asc' | 'desc'
+}
+
+export interface EmployeeOption {
+    _id: string
+    fullName: string
+    email: string
+    currentWorkload: number
+    department?: string
+}
+
+export interface CreateTaskPayload {
+    title: string
+    description?: string
+    effort: number
+    priority?: TaskPriority
+    dueDate?: string
+    isMandatory?: boolean
+}
+
+export interface AssignTaskPayload {
+    taskId: string
+    employeeId?: string
+    assignmentMode?: 'manual' | 'rule-based' | 'ai'
+    requiredSkills?: string[]
+    useAIAssignment?: boolean
+    useRuleBasedAssignment?: boolean
+}
+
+export interface UpdateTaskPayload {
+    title?: string
+    description?: string
+    effort?: number
+    priority?: TaskPriority
+    status?: TaskStatus
+    dueDate?: string
+    assignedTo?: string | null
+    riskLevel?: TaskRiskLevel
+    isMandatory?: boolean
+}
+
+export interface TaskTemplateItem {
+    id?: string
+    _id: string
+    name: string
+    title: string
+    description: string
+    defaultPriority: TaskPriority
+    defaultEffort: number
+    defaultIsMandatory: boolean
+    department?: string
+    skillsRequired?: string[]
+    tags?: string[]
+    isActive: boolean
+    createdAt: string
+    createdBy?: { _id: string; fullName: string }
+}
+
+export interface CreateTaskTemplatePayload {
+    name: string
+    title: string
+    description?: string
+    defaultPriority?: TaskPriority
+    defaultEffort?: number
+    defaultIsMandatory?: boolean
+    department?: string
+    skillsRequired?: string[]
+    tags?: string[]
+}
+
+export interface UpdateTaskTemplatePayload {
+    name?: string
+    title?: string
+    description?: string
+    defaultPriority?: TaskPriority
+    defaultEffort?: number
+    defaultIsMandatory?: boolean
+    department?: string
+    skillsRequired?: string[]
+    tags?: string[]
+    isActive?: boolean
+}
+
+export async function getTeamTasks(params: TaskQueryParams = {}): Promise<TaskListResponse> {
+    const searchParams = new URLSearchParams()
+
+    if (params.page) searchParams.set('page', String(params.page))
+    if (params.limit) searchParams.set('limit', String(params.limit))
+    if (params.search?.trim()) searchParams.set('search', params.search.trim())
+    if (params.status) searchParams.set('status', params.status)
+    if (params.priority) searchParams.set('priority', params.priority)
+    if (params.riskLevel) searchParams.set('riskLevel', params.riskLevel)
+    if (params.employeeId) searchParams.set('employeeId', params.employeeId)
+    if (params.id) searchParams.set('id', params.id)
+    if (params.dueDate) searchParams.set('dueDate', params.dueDate)
+    if (params.dueDateFrom) searchParams.set('dueDateFrom', params.dueDateFrom)
+    if (params.dueDateTo) searchParams.set('dueDateTo', params.dueDateTo)
+    if (params.sortBy) searchParams.set('sortBy', params.sortBy)
+    if (params.sortDir) searchParams.set('sortDir', params.sortDir)
+
+    const response = await api.get(`/tasks/team-tasks?${searchParams.toString()}`)
+    const payload = response.data || {}
+
+    return {
+        data: payload.tasks || [],
+        meta: {
+            page: Number(payload.meta?.page || 1),
+            limit: Number(payload.meta?.limit || 10),
+            total: Number(payload.meta?.total || 0),
+            totalPages: Number(payload.meta?.totalPages || 1),
+        },
+    }
+}
+
+export async function getTaskDetails(taskId: string): Promise<TaskItem> {
+    const response = await api.get(`/tasks/${taskId}`)
+    return response.data?.task as TaskItem
+}
+
+export async function getTaskHistory(taskId: string): Promise<TaskHistoryItem[]> {
+    const response = await api.get(`/tasks/${taskId}/history`)
+    return (response.data?.history || []) as TaskHistoryItem[]
+}
+
+export async function getTaskHistoryFeed(params: {
+    page?: number
+    limit?: number
+    action?: string
+    actorId?: string
+    taskId?: string
+    sortBy?: string
+    sortDir?: 'asc' | 'desc'
+} = {}) {
+    const q = new URLSearchParams()
+    if (params.page) q.set('page', String(params.page))
+    if (params.limit) q.set('limit', String(params.limit))
+    if (params.action) q.set('action', params.action)
+    if (params.actorId) q.set('actorId', params.actorId)
+    if (params.taskId) q.set('taskId', params.taskId)
+    if (params.sortBy) q.set('sortBy', params.sortBy)
+    if (params.sortDir) q.set('sortDir', params.sortDir)
+
+    const response = await api.get(`/tasks/history?${q.toString()}`)
+    return {
+        history: response.data?.history || [],
+        meta: response.data?.meta || { page: 1, limit: 30, total: 0, totalPages: 1 },
+    }
+}
+
+export async function getTaskSuggestions(taskId: string) {
+    const response = await api.get(`/tasks/${taskId}/suggest-assignee`)
+    return response.data?.suggestion
+}
+
+export async function createTask(payload: CreateTaskPayload) {
+    const response = await api.post('/tasks/create', payload)
+    return response.data?.task
+}
+
+export async function assignTask(payload: AssignTaskPayload) {
+    const body = {
+        taskId: payload.taskId,
+        employeeId: payload.employeeId,
+        assignmentMode: payload.assignmentMode || 'manual',
+        requiredSkills: payload.requiredSkills || [],
+    }
+
+    const response = await api.post('/tasks/assign', body)
+    return {
+        task: response.data?.task,
+        suggestion: response.data?.suggestion,
+        allCandidates: response.data?.allCandidates || [],
+    }
+}
+
+export async function updateTask(taskId: string, payload: UpdateTaskPayload) {
+    const response = await api.put(`/tasks/${taskId}`, payload)
+    return response.data?.task
+}
+
+export async function deleteTask(taskId: string) {
+    const response = await api.delete(`/tasks/${taskId}`)
+    return response.data
+}
+
+export async function getEmployeesForAssignment(search = ''): Promise<EmployeeOption[]> {
+    const params = new URLSearchParams()
+    params.set('page', '1')
+    params.set('limit', '100')
+    if (search.trim()) params.set('search', search.trim())
+
+    const response = await api.get(`/employees?${params.toString()}`)
+    const rows = response.data?.data || []
+
+    return rows.map((row: any) => ({
+        _id: row._id,
+        fullName: row.fullName,
+        email: row.email,
+        currentWorkload: Number(row.currentWorkload || 0),
+        department: row.department || undefined,
+    }))
+}
+
+export async function getTaskTemplates(params: {
+    page?: number
+    limit?: number
+    search?: string
+    department?: string
+    includeInactive?: boolean
+} = {}) {
+    const q = new URLSearchParams()
+    if (params.page) q.set('page', String(params.page))
+    if (params.limit) q.set('limit', String(params.limit))
+    if (params.search) q.set('search', params.search)
+    if (params.department) q.set('department', params.department)
+    if (params.includeInactive) q.set('includeInactive', String(params.includeInactive))
+
+    const response = await api.get(`/tasks/templates?${q.toString()}`)
+    return {
+        templates: (response.data?.templates || []) as TaskTemplateItem[],
+        meta: response.data?.meta || { page: 1, limit: 20, total: 0, totalPages: 1 },
+    }
+}
+
+export async function createTaskTemplate(payload: CreateTaskTemplatePayload) {
+    const response = await api.post('/tasks/templates', payload)
+    return response.data?.template as TaskTemplateItem
+}
+
+export async function updateTaskTemplate(templateId: string, payload: UpdateTaskTemplatePayload) {
+    const response = await api.put(`/tasks/templates/${templateId}`, payload)
+    return response.data?.template as TaskTemplateItem
+}
+
+export async function deleteTaskTemplate(templateId: string) {
+    const response = await api.delete(`/tasks/templates/${templateId}`)
+    return response.data
+}

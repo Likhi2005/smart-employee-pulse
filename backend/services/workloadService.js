@@ -1,43 +1,51 @@
 const Task = require('../models/Task');
 const User = require('../models/User');
 
-// Priority weight mapping
 const PRIORITY_WEIGHTS = {
     low: 1,
     medium: 2,
     high: 3,
 };
 
+// Stage 3: weighted by status
+const STATUS_WEIGHTS = {
+    pending: 1.0,
+    'in-progress': 1.25,
+    completed: 0,
+    rejected: 0,
+};
+
 /**
  * Calculate workload score for an employee
- * Formula: Σ(effort × priority_weight) for all active tasks
- * Active tasks = pending, accepted (not completed/rejected)
+ * Workload score = sum of (effort * priority weight * status weight) for all pending/in-progress tasks
+ * Higher score means more workload. Completed/rejected tasks do not contribute to workload.
+ * Priority weight: low=1, medium=2, high=3
+ * Status weight: pending=1.0, in-progress=1.25, completed=0, rejected=0
+ * The score is rounded to 2 decimal places for easier readability.
  */
 const calculateWorkloadScore = async (userId) => {
     try {
         const tasks = await Task.find({
             assignedTo: userId,
-            status: { $in: ['pending', 'accepted'] }, // Only active tasks
-        });
+            isDeleted: { $ne: true },
+            status: { $in: ['pending', 'in-progress'] },
+        }).select('effort priority status');
 
         let totalWorkload = 0;
 
-        tasks.forEach((task) => {
-            const weight = PRIORITY_WEIGHTS[task.priority] || 1;
-            const contribution = task.effort * weight;
-            totalWorkload += contribution;
-        });
+        for (const task of tasks) {
+            const priorityWeight = PRIORITY_WEIGHTS[task.priority] || 1;
+            const statusWeight = STATUS_WEIGHTS[task.status] ?? 1;
+            totalWorkload += task.effort * priorityWeight * statusWeight;
+        }
 
-        return totalWorkload;
+        return Math.round(totalWorkload * 100) / 100;
     } catch (error) {
         console.error('Error calculating workload:', error);
         throw error;
     }
 };
 
-/**
- * Update employee's workload in database
- */
 const updateEmployeeWorkload = async (userId) => {
     try {
         const workloadScore = await calculateWorkloadScore(userId);
@@ -53,17 +61,13 @@ const updateEmployeeWorkload = async (userId) => {
     }
 };
 
-/**
- * Get team workload (for manager dashboard)
- * Returns employees with their current workload
- */
 const getTeamWorkload = async (companyId) => {
     try {
         const employees = await User.find({
             companyId,
             role: 'employee',
             isActive: true,
-        }).select('fullName email department currentWorkload');
+        }).select('fullName email department currentWorkload performanceScore skills');
 
         return employees.sort((a, b) => a.currentWorkload - b.currentWorkload);
     } catch (error) {
@@ -72,9 +76,6 @@ const getTeamWorkload = async (companyId) => {
     }
 };
 
-/**
- * Find employee with lowest workload (for AI suggestion)
- */
 const findBestAssignee = async (companyId, excludeUserIds = []) => {
     try {
         const employee = await User.findOne({
@@ -84,7 +85,7 @@ const findBestAssignee = async (companyId, excludeUserIds = []) => {
             _id: { $nin: excludeUserIds },
         })
             .sort({ currentWorkload: 1 })
-            .select('_id fullName email currentWorkload');
+            .select('_id fullName email currentWorkload performanceScore skills');
 
         return employee;
     } catch (error) {
@@ -99,4 +100,5 @@ module.exports = {
     getTeamWorkload,
     findBestAssignee,
     PRIORITY_WEIGHTS,
+    STATUS_WEIGHTS,
 };

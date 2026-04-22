@@ -2,11 +2,9 @@
 
 import { useParams } from 'react-router-dom';
 import { ManagerLayout } from '@/components/layouts/ManagerLayout';
-import AllTasksView from '@/components/dashboard/tasks/AllTasksView';
+import { TeamTab } from '@/components/dashboard/team/TeamTab'
 import StatsPage from './StatsPage';
-import AssignNewView from '@/components/dashboard/tasks/assign/AssignNewView';
-import AutoAssignView from '../components/dashboard/tasks/auto-assign/AutoAssignView';
-import HistoryView from '../components/dashboard/tasks/history/HistoryView';
+import { TasksTab } from '@/components/dashboard/tasks/TasksTab'
 
 export default function ManagerDashboardPage() {
     const params = useParams();
@@ -16,12 +14,11 @@ export default function ManagerDashboardPage() {
         <ManagerLayout>
             <div className="h-full">
                 {tab === 'overview' && <div className="p-6">Overview Tab (Coming Soon)</div>}
+                {tab === 'tasks' && <TasksTab />}
+                {tab === 'workload' && <div className="p-6">Workload Tab (Coming Soon)</div>}
+                {tab === 'team' && <TeamTab />}
+                {tab === 'leaderboard' && <div className="p-6">Leaderboard Tab (Coming Soon)</div>}
                 {tab === 'stats' && <StatsPage />}
-                {tab === 'tasks' && <AllTasksView />}
-                {tab === 'assign' && <AssignNewView />}
-                {tab === 'auto-assign' && <AutoAssignView />}
-                {tab === 'history' && <HistoryView />}
-                {tab === 'templates' && <div className="p-6">Templates (Coming Soon)</div>}
             </div>
         </ManagerLayout>
     );

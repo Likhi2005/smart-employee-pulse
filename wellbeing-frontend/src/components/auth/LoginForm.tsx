@@ -64,13 +64,13 @@ export const LoginForm: React.FC<LoginFormProps> = ({
                 <motion.div
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="p-4 rounded-md bg-red-50 text-red-800 text-sm border border-red-200 flex items-start justify-between"
+                    className="p-4 rounded-md bg-red-900/20 text-red-400 text-sm border border-red-800/50 flex items-start justify-between"
                 >
                     <span>{error}</span>
                     <button
                         type="button"
                         onClick={handleErrorDismiss}
-                        className="text-red-600 hover:text-red-700"
+                        className="text-red-400 hover:text-red-300"
                     >
                         ✕
                     </button>
@@ -91,8 +91,8 @@ export const LoginForm: React.FC<LoginFormProps> = ({
             />
 
             <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                    Password <span className="text-red-500">*</span>
+                <label className="block text-sm font-medium text-neutral-300 mb-1.5">
+                    Password <span className="text-red-400">*</span>
                 </label>
                 <div className="relative">
                     <Input
@@ -110,7 +110,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
                     <button
                         type="button"
                         onClick={() => setIsPasswordVisible(!isPasswordVisible)}
-                        className="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400 hover:text-slate-600"
+                        className="absolute inset-y-0 right-0 flex items-center pr-3 text-neutral-500 hover:text-neutral-400"
                     >
                         {isPasswordVisible ? <EyeOff size={18} /> : <Eye size={18} />}
                     </button>
@@ -128,8 +128,8 @@ export const LoginForm: React.FC<LoginFormProps> = ({
                     type="submit"
                     isLoading={isLoading}
                     className={cn(
-                        'w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800',
-                        isHovered ? 'shadow-lg shadow-blue-500/25' : ''
+                        'w-full bg-amber-700 hover:bg-amber-800',
+                        isHovered ? 'shadow-lg shadow-amber-500/25' : ''
                     )}
                 >
                     <span className="flex items-center justify-center">
@@ -142,7 +142,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
             <div className="text-center">
                 <a
                     href="/register"
-                    className="text-blue-600 hover:text-blue-700 text-sm transition-colors"
+                    className="text-amber-600 hover:text-amber-500 text-sm transition-colors"
                 >
                     New company? Register here
                 </a>

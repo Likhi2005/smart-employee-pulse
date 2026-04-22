@@ -98,13 +98,13 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
                 <motion.div
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="p-4 rounded-md bg-red-50 text-red-800 text-sm border border-red-200 flex items-start justify-between"
+                    className="p-4 rounded-md bg-red-900/20 text-red-400 text-sm border border-red-800/50 flex items-start justify-between"
                 >
                     <span>{error}</span>
                     <button
                         type="button"
                         onClick={handleErrorDismiss}
-                        className="text-red-600 hover:text-red-700"
+                        className="text-red-400 hover:text-red-300"
                     >
                         ✕
                     </button>
@@ -124,7 +124,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
                 name="industry"
                 value={formData.industry}
                 onChange={handleChange}
-                className="w-full px-3 py-2 rounded-md border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 rounded-md border border-neutral-700 bg-neutral-800 text-neutral-50 text-sm focus:outline-none focus:ring-2 focus:ring-amber-600"
             >
                 <option value="">Select Industry (Optional)</option>
                 <option value="Technology">Technology</option>
@@ -185,8 +185,8 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
                     type="submit"
                     isLoading={isLoading}
                     className={cn(
-                        'w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800',
-                        isHovered ? 'shadow-lg shadow-blue-500/25' : ''
+                        'w-full bg-amber-700 hover:bg-amber-800',
+                        isHovered ? 'shadow-lg shadow-amber-500/25' : ''
                     )}
                 >
                     <span className="flex items-center justify-center">
@@ -199,7 +199,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
             <div className="text-center">
                 <a
                     href="/login"
-                    className="text-blue-600 hover:text-blue-700 text-sm transition-colors"
+                    className="text-amber-600 hover:text-amber-500 text-sm transition-colors"
                 >
                     Already have an account? Sign in
                 </a>

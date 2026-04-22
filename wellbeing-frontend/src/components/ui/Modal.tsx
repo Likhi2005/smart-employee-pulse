@@ -7,7 +7,7 @@ interface ModalProps {
     onClose: () => void;
     children: React.ReactNode;
     closeOnBackdropClick?: boolean;
-    size?: 'sm' | 'md' | 'lg' | 'xl';
+    size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl';
     className?: string;
 }
 
@@ -41,6 +41,7 @@ export const Modal = React.forwardRef<HTMLDivElement, ModalProps>(
             md: 'max-w-md',
             lg: 'max-w-lg',
             xl: 'max-w-xl',
+            '2xl': 'max-w-2xl',
         };
 
         return (
@@ -67,7 +68,7 @@ export const Modal = React.forwardRef<HTMLDivElement, ModalProps>(
                                 transition={{ duration: 0.2 }}
                                 onClick={(e) => e.stopPropagation()}
                                 className={cn(
-                                    'bg-white dark:bg-neutral-900 rounded-lg shadow-2xl pointer-events-auto',
+                                    'bg-white dark:bg-neutral-900 rounded-lg shadow-2xl pointer-events-auto border border-neutral-200 dark:border-neutral-800',
                                     sizeClasses[size],
                                     'w-full',
                                     className

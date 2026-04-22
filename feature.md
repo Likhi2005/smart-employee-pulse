@@ -41,3 +41,13 @@ Option B: Groq Integration (Fast)
 Lightning-fast inference
 Better for real-time decisions
 Good alternative to Gemini
+
+
+
+
+
+
+
+
+
+

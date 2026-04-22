@@ -32,8 +32,8 @@ export const Navbar = () => {
             className={cn(
                 'fixed top-0 left-0 right-0 z-50 transition-all duration-300',
                 isScrolled
-                    ? 'bg-white/90 backdrop-blur-md border-b border-slate-200 shadow-sm'
-                    : 'bg-white/50 backdrop-blur-sm'
+                    ? 'bg-neutral-900/90 backdrop-blur-md border-b border-amber-800/30 shadow-sm'
+                    : 'bg-neutral-900/50 backdrop-blur-sm'
             )}
             initial={{ y: -100 }}
             animate={{ y: 0 }}
@@ -43,15 +43,14 @@ export const Navbar = () => {
                 {/* Logo */}
                 <motion.div
                     className="flex items-center gap-2 cursor-pointer"
-                    whileHover={{ scale: 1.05 }}
                     onClick={() => navigate('/')}
                 >
-                    <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-800 rounded-lg flex items-center justify-center shadow-lg">
+                    <div className="w-10 h-10 bg-gradient-to-br from-amber-700 to-amber-800 rounded-lg flex items-center justify-center shadow-lg">
                         <Zap className="text-white" size={24} />
                     </div>
                     <div>
-                        <span className="font-bold text-xl text-slate-900">WorkPulse</span>
-                        <span className="text-xs text-blue-600 block">AI</span>
+                        <span className="font-bold text-xl text-neutral-50">WorkPulse</span>
+                        <span className="text-xs text-amber-600 block">AI</span>
                     </div>
                 </motion.div>
 
@@ -61,7 +60,7 @@ export const Navbar = () => {
                         <a
                             key={item.label}
                             href={item.href}
-                            className="text-slate-600 hover:text-slate-900 transition-colors font-medium"
+                            className="text-neutral-400 hover:text-neutral-50 transition-colors font-medium"
                         >
                             {item.label}
                         </a>
@@ -73,13 +72,13 @@ export const Navbar = () => {
                     <Button
                         variant="ghost"
                         onClick={() => navigate('/login')}
-                        className="text-slate-600"
+                        className="text-neutral-400 hover:text-neutral-700"
                     >
                         Sign In
                     </Button>
                     <Button
                         onClick={() => navigate('/register')}
-                        className="bg-blue-600 hover:bg-blue-700 text-white"
+                        className="bg-amber-700 hover:bg-amber-800 text-white"
                     >
                         Get Started
                     </Button>
@@ -91,12 +90,13 @@ export const Navbar = () => {
                         variant="ghost"
                         size="sm"
                         onClick={() => navigate('/login')}
+                        className="text-neutral-400"
                     >
                         Sign In
                     </Button>
                     <button
                         onClick={() => setIsOpen(!isOpen)}
-                        className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+                        className="p-2 hover:bg-neutral-800 rounded-lg transition-colors text-neutral-50"
                     >
                         {isOpen ? <X size={24} /> : <Menu size={24} />}
                     </button>
@@ -109,14 +109,14 @@ export const Navbar = () => {
                     initial={{ opacity: 0, y: -20 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -20 }}
-                    className="lg:hidden bg-white border-t border-slate-200 shadow-lg"
+                    className="lg:hidden bg-neutral-900 border-t border-amber-800/30 shadow-lg"
                 >
                     <Container className="py-4 space-y-3">
                         {navItems.map((item) => (
                             <a
                                 key={item.label}
                                 href={item.href}
-                                className="block px-4 py-2 text-slate-600 hover:bg-slate-50 rounded-lg transition-colors"
+                                className="block px-4 py-2 text-neutral-400 hover:text-neutral-50 hover:bg-neutral-800 rounded-lg transition-colors"
                                 onClick={() => setIsOpen(false)}
                             >
                                 {item.label}
@@ -127,7 +127,7 @@ export const Navbar = () => {
                                 navigate('/register')
                                 setIsOpen(false)
                             }}
-                            className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                            className="w-full bg-amber-700 hover:bg-amber-800 text-white"
                         >
                             Get Started
                         </Button>

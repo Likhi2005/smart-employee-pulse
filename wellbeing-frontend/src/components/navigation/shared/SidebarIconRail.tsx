@@ -26,10 +26,16 @@ export const SidebarIconRail: React.FC<SidebarIconRailProps> = ({
 }) => {
     return (
         <aside className="bg-black flex flex-col gap-2 items-center p-3 w-16 h-screen border-r border-neutral-800">
-            {/* Logo */}
-            <div className="mb-2 size-10 flex items-center justify-center bg-blue-600 rounded-lg">
+            {/* Logo - Now toggles detail sidebar instead of navigating */}
+            <motion.button
+                onClick={onToggleDetail}
+                title="Toggle Navigation"
+                className="mb-2 size-10 flex items-center justify-center bg-amber-700 hover:bg-amber-800 rounded-lg transition-colors"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+            >
                 <div className="text-white font-bold text-sm">WP</div>
-            </div>
+            </motion.button>
 
             {/* Navigation Icons */}
             <div className="flex flex-col gap-2 w-full items-center flex-1">
@@ -41,7 +47,7 @@ export const SidebarIconRail: React.FC<SidebarIconRailProps> = ({
                                 className={cn(
                                     'w-10 h-10 rounded-lg flex items-center justify-center transition-colors duration-200',
                                     item.isActive
-                                        ? 'bg-blue-600 text-white'
+                                        ? 'bg-amber-700 text-white'
                                         : 'text-neutral-400 hover:bg-neutral-800 hover:text-neutral-200'
                                 )}
                                 whileHover={{ scale: 1.05 }}

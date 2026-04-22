@@ -63,19 +63,27 @@ router.post(
 );
 
 // 4. CREATE EMPLOYEE (Manager only)
-router.post(
-    '/create-employee',
-    authenticate,
-    authorizeManager,
-    [
-        body('fullName').trim().notEmpty().withMessage('Full name required'),
-        body('email').isEmail().withMessage('Valid email required'),
-    ],
-    handleValidationErrors,
-    authController.createEmployee
-);
+// router.post(
+//     '/create-employee',
+//     authenticate,
+//     authorizeManager,
+//     [
+//         body('fullName').trim().notEmpty().withMessage('Full name required'),
+//         body('email').isEmail().withMessage('Valid email required'),
+//     ],
+//     handleValidationErrors,
+//     authController.createEmployee
+// );
 
 // 5. GET CURRENT USER
 router.get('/me', authenticate, authController.getMe);
+
+// 6. GET COMPANY EMPLOYEES (Manager only)
+// router.get(
+//     '/employees',
+//     authenticate,
+//     authorizeManager,
+//     authController.getCompanyEmployees
+// );
 
 module.exports = router;

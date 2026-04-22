@@ -27,7 +27,7 @@ export const LoginPage: React.FC = () => {
             if (response.user.role === 'employee' && !response.user.isPasswordChanged) {
                 navigate('/change-password', { replace: true })
             } else if (response.user.role === 'manager') {
-                navigate('/dashboard/manager', { replace: true })
+                navigate('/dashboard/manager/overview', { replace: true })
             } else {
                 navigate('/dashboard/employee', { replace: true })
             }
@@ -45,7 +45,7 @@ export const LoginPage: React.FC = () => {
             <LoginForm
                 onSubmit={handleLogin}
                 isLoading={isLoading}
-                error={error || authError}
+                error={error ?? authError ?? ''}
                 onErrorDismiss={() => {
                     setError('')
                     clearError()

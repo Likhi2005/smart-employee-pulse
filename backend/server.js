@@ -9,7 +9,13 @@ const app = express();
 connectDB();
 
 // Middleware
-app.use(cors());
+app.use(cors({
+    origin: [
+        'http://localhost:5173', // Frontend dev server
+        'http://localhost:3000',
+        process.env.FRONTEND_URL,
+    ]
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -19,6 +25,7 @@ app.use('/api/tasks', require('./routes/tasks'));
 app.use('/api/suggestions', require('./routes/suggestions'));
 app.use('/api/ai', require('./routes/ai'));
 app.use('/api/dashboard', require('./routes/dashboard'));
+app.use('/api/employees', require('./routes/employees'));
 
 // Health check
 app.get('/api/health', (req, res) => {

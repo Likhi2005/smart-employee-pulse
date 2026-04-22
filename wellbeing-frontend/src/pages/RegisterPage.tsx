@@ -28,7 +28,7 @@ export const RegisterPage: React.FC = () => {
 
         try {
             await register(data)
-            navigate('/dashboard/manager', { replace: true })
+            navigate('/dashboard/manager/overview', { replace: true })
         } catch (err) {
             const errorMessage =
                 err instanceof Error

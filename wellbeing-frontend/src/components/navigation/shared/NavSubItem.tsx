@@ -1,11 +1,11 @@
 import React from 'react'
-import { LucideIcon } from 'lucide-react'
+import { LucideIcon, FileText } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { Link, useLocation } from 'react-router-dom'
 import { cn } from '@/utils/cn'
 
 interface NavSubItemProps {
-    icon: LucideIcon
+    icon?: LucideIcon
     label: string
     to: string
     isExpanded: boolean
@@ -21,19 +21,22 @@ export const NavSubItem: React.FC<NavSubItemProps> = ({
 }) => {
     const location = useLocation()
     const isActive = location.pathname === to
+    const FallbackIcon = FileText
 
     return (
         <Link to={to}>
             <motion.div
                 className={cn(
-                    'flex items-center gap-3 px-3 py-2 rounded-lg transition-colors duration-200',
+                    'flex items-center gap-3 px-3 py-2 rounded-lg transition-colors duration-200 cursor-pointer',
                     isActive
-                        ? 'bg-neutral-800 text-blue-400'
+                        ? 'bg-neutral-800 text-neutral-50'
                         : 'text-neutral-400 hover:bg-neutral-800 hover:text-neutral-200'
                 )}
                 whileHover={{ x: 4 }}
             >
-                <Icon size={16} className="flex-shrink-0" />
+                <span className={isActive ? 'text-amber-500' : ''}>
+                    {Icon ? <Icon size={16} className="flex-shrink-0" /> : <FallbackIcon size={16} className="flex-shrink-0" />}
+                </span>
                 {isExpanded && (
                     <motion.span
                         initial={{ opacity: 0 }}

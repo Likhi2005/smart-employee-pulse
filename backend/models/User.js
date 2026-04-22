@@ -34,9 +34,19 @@ const userSchema = new mongoose.Schema(
             type: String,
             default: null,
         },
+        skills: {
+            type: [String],
+            default: [],
+        },
         currentWorkload: {
             type: Number,
             default: 0, // Workload score
+        },
+        // Store a persisted score for analytics/filtering
+        performanceScore: {
+            type: Number,
+            default: 0,
+            min: 0,
         },
         // For first-time login password change
         isPasswordChanged: {
@@ -50,6 +60,13 @@ const userSchema = new mongoose.Schema(
     },
     { timestamps: true }
 );
+
+// Optional virtual so requirement "name" maps to fullName cleanly
+userSchema.virtual('name').get(function () {
+    return this.fullName;
+});
+userSchema.set('toJSON', { virtuals: true });
+userSchema.set('toObject', { virtuals: true });
 
 // Hash password before saving
 userSchema.pre('save', async function (next) {
@@ -70,10 +87,10 @@ userSchema.methods.comparePassword = async function (passwordToCheck) {
 };
 
 // Exclude password from JSON output
+const originalToJSON = userSchema.methods.toJSON;
 userSchema.methods.toJSON = function () {
-    const obj = this.toObject();
+    const obj = originalToJSON ? originalToJSON.call(this) : this.toObject();
     delete obj.password;
     return obj;
 };
-
 module.exports = mongoose.model('User', userSchema);
