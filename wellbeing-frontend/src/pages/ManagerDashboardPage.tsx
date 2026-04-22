@@ -1,66 +1,27 @@
-'use client';
+'use client'
 
-import { useParams } from 'react-router-dom';
-import { ManagerLayout } from '@/components/layouts/ManagerLayout';
+import { useParams, Navigate } from 'react-router-dom'
+import { ManagerLayout } from '@/components/layouts/ManagerLayout'
 import { TeamTab } from '@/components/dashboard/team/TeamTab'
-import StatsPage from './StatsPage';
+import { LeaderboardView } from '@/features/people/views/LeaderboardView'
 import { TasksTab } from '@/components/dashboard/tasks/TasksTab'
+import { ManagerOverviewTab } from '@/components/dashboard/manager/ManagerOverviewTab'
 
 export default function ManagerDashboardPage() {
-    const params = useParams();
-    const tab = params.tab || 'overview';
+    const params = useParams()
+    const tab = params.tab || 'overview'
 
     return (
         <ManagerLayout>
-            <div className="h-full">
-                {tab === 'overview' && <div className="p-6">Overview Tab (Coming Soon)</div>}
+            <div className="min-h-full p-6">
+                {tab === 'overview' && <ManagerOverviewTab />}
                 {tab === 'tasks' && <TasksTab />}
-                {tab === 'workload' && <div className="p-6">Workload Tab (Coming Soon)</div>}
                 {tab === 'team' && <TeamTab />}
-                {tab === 'leaderboard' && <div className="p-6">Leaderboard Tab (Coming Soon)</div>}
-                {tab === 'stats' && <StatsPage />}
+                {tab === 'leaderboard' && <LeaderboardView />}
+                {!['overview', 'stats', 'tasks', 'workload', 'team', 'leaderboard'].includes(tab) && (
+                    <Navigate to="/dashboard/manager/overview" replace />
+                )}
             </div>
         </ManagerLayout>
-    );
+    )
 }
-
-
-
-// import React from 'react'
-// import { useParams } from 'react-router-dom'
-// import { ManagerLayout } from '@/components/layouts/ManagerLayout'
-// import { Container } from '@/components/ui/Container'
-// import { TasksTab } from '@/components/dashboard/tasks/TasksTab'
-
-// // Placeholder tab components (build these next)
-// const OverviewTab = () => <div className="p-8">Overview Tab - Coming</div>
-// const WorkloadTab = () => <div className="p-8">Workload Tab - Coming</div>
-// const TeamTab = () => <div className="p-8">Team Tab - Coming</div>
-// const LeaderboardTab = () => <div className="p-8">Leaderboard Tab - Coming</div>
-
-// export const ManagerDashboardPage: React.FC = () => {
-//     const { tab = 'overview' } = useParams()
-
-//     const renderTab = () => {
-//         switch (tab) {
-//             case 'overview':
-//                 return <OverviewTab />
-//             case 'tasks':
-//                 return <TasksTab />
-//             case 'workload':
-//                 return <WorkloadTab />
-//             case 'team':
-//                 return <TeamTab />
-//             case 'leaderboard':
-//                 return <LeaderboardTab />
-//             default:
-//                 return <OverviewTab />
-//         }
-//     }
-
-//     return (
-//         <ManagerLayout>
-//             <Container>{renderTab()}</Container>
-//         </ManagerLayout>
-//     )
-// }

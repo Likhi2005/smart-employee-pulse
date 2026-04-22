@@ -1,8 +1,50 @@
-import { motion } from 'framer-motion';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { trendData } from '@/data/managerStatsData';
+import { memo, useMemo } from 'react'
+import { motion } from 'framer-motion'
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
+import type { TaskItem } from '@/types'
 
-export function TrendChart() {
+interface TrendChartProps {
+    recentTasks: TaskItem[]
+}
+
+export const TrendChart = memo(function TrendChart({ recentTasks }: TrendChartProps) {
+    if (!recentTasks || recentTasks.length === 0) {
+        return (
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.7 }}
+                className="rounded-lg border border-neutral-800 bg-gradient-to-br from-neutral-900/50 to-black/50 p-6 backdrop-blur-sm col-span-2"
+            >
+                <h3 className="mb-6 text-lg font-semibold text-neutral-50">Task Trend (Last 7 Days)</h3>
+                <div className="h-[300px] flex items-center justify-center text-neutral-500">
+                    No task trend data available
+                </div>
+            </motion.div>
+        )
+    }
+
+    // Build trend data from last 7 days
+    const trendData = useMemo(() => {
+        const now = new Date()
+        return Array.from({ length: 7 }, (_, i) => {
+            const date = new Date(now)
+            date.setDate(date.getDate() - (6 - i))
+            const day = date.toLocaleDateString('en-US', { weekday: 'short' })
+
+            const dayTasks = recentTasks.filter(t => {
+                const taskDate = new Date(t.createdAt)
+                return taskDate.toDateString() === date.toDateString()
+            })
+
+            return {
+                day,
+                assigned: dayTasks.length,
+                completed: dayTasks.filter(t => t.status === 'completed').length,
+            }
+        })
+    }, [recentTasks])
+
     return (
         <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -45,5 +87,5 @@ export function TrendChart() {
                 </LineChart>
             </ResponsiveContainer>
         </motion.div>
-    );
-}
+    )
+})

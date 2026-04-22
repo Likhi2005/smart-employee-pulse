@@ -1,10 +1,15 @@
-import { motion } from 'framer-motion';
-import { Calendar, Filter } from 'lucide-react';
-import { useState } from 'react';
+import { motion } from 'framer-motion'
+import { Calendar, Filter } from 'lucide-react'
+import { useState } from 'react'
+import type { ManagerDashboard } from '@/services/dashboardService'
 
-export function StatsFilters() {
-    const [dateRange, setDateRange] = useState('week');
-    const [selectedEmployee, setSelectedEmployee] = useState('all');
+interface StatsFiltersProps {
+    dashboardData: ManagerDashboard
+}
+
+export function StatsFilters({ dashboardData }: StatsFiltersProps) {
+    const [dateRange, setDateRange] = useState('week')
+    const [selectedEmployee, setSelectedEmployee] = useState('all')
 
     return (
         <motion.div
@@ -33,11 +38,11 @@ export function StatsFilters() {
                     onChange={(e) => setSelectedEmployee(e.target.value)}
                     className="bg-transparent text-sm text-neutral-50 focus:outline-none"
                 >
-                    <option value="all">All Employees</option>
-                    <option value="overloaded">Overloaded Only</option>
-                    <option value="available">Available Only</option>
+                    <option value="all">All Employees ({dashboardData.teamStats.totalEmployees})</option>
+                    <option value="overloaded">Overloaded Only ({dashboardData.teamWorkload.filter(e => e.currentWorkload > 30).length})</option>
+                    <option value="available">Available Only ({dashboardData.teamWorkload.filter(e => e.currentWorkload < 15).length})</option>
                 </select>
             </div>
         </motion.div>
-    );
+    )
 }

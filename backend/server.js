@@ -55,6 +55,7 @@ app.use('/api/tasks', require('./routes/tasks'));
 app.use('/api/suggestions', require('./routes/suggestions'));
 app.use('/api/ai', require('./routes/ai'));
 app.use('/api/dashboard', require('./routes/dashboard'));
+app.use('/api/workload', require('./routes/workload'));
 app.use('/api/employees', require('./routes/employees'));
 
 // Health check

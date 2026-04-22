@@ -25,7 +25,6 @@ export const ManagerSidebar: React.FC = () => {
         navigate('/login')
     }
 
-    // Sidebar data structure
     const sidebarData = {
         sections: [
             {
@@ -40,29 +39,23 @@ export const ManagerSidebar: React.FC = () => {
                             { icon: Zap, label: 'Quick Stats', to: '/dashboard/manager/overview?section=stats' },
                         ],
                     },
-                    {
-                        icon: BarChart3,
-                        label: 'Analytics',
-                        to: '/dashboard/manager/overview?section=analytics',
-                        subItems: [],
-                    },
                 ],
             },
-            {
-                title: 'Analytics',
-                items: [
-                    {
-                        icon: BarChart3,
-                        label: 'Statistics',
-                        to: '/manager/stats',
-                        subItems: [
-                            { icon: BarChart3, label: 'Overview', to: '/manager/stats' },
-                            { icon: Users, label: 'Employees', to: '/manager/stats?section=employees' },
-                            { icon: TrendingUp, label: 'Trends', to: '/manager/stats?section=trends' },
-                        ],
-                    },
-                ],
-            },
+            // {
+            //     title: 'Analytics',
+            //     items: [
+            //         {
+            //             icon: BarChart3,
+            //             label: 'Statistics',
+            //             to: '/dashboard/manager/stats',
+            //             subItems: [
+            //                 { icon: BarChart3, label: 'Overview', to: '/dashboard/manager/stats' },
+            //                 { icon: Users, label: 'Employees', to: '/dashboard/manager/stats?section=employees' },
+            //                 { icon: TrendingUp, label: 'Trends', to: '/dashboard/manager/stats?section=trends' },
+            //             ],
+            //         },
+            //     ],
+            // },
             {
                 title: 'Management',
                 items: [
@@ -74,19 +67,8 @@ export const ManagerSidebar: React.FC = () => {
                         subItems: [
                             { label: 'All Tasks', to: '/dashboard/manager/tasks?section=list' },
                             { label: 'Assign New', to: '/dashboard/manager/tasks?section=create' },
-                            { label: 'Auto-Assign', to: '/dashboard/manager/tasks?section=create' },
                             { label: 'History', to: '/dashboard/manager/tasks?section=history' },
                             { label: 'Templates', to: '/dashboard/manager/tasks?section=templates' },
-                        ],
-                    },
-                    {
-                        icon: Zap,
-                        label: 'Workload',
-                        to: '/dashboard/manager/workload',
-                        subItems: [
-                            { icon: Zap, label: 'Distribution', to: '/dashboard/manager/workload' },
-                            { icon: BarChart3, label: 'Analytics', to: '/dashboard/manager/workload?section=analytics' },
-                            { icon: Users, label: 'By Team', to: '/dashboard/manager/workload?section=team' },
                         ],
                     },
                 ],
@@ -100,7 +82,7 @@ export const ManagerSidebar: React.FC = () => {
                         to: '/dashboard/manager/team',
                         subItems: [
                             { icon: Users, label: 'All Members', to: '/dashboard/manager/team' },
-                            { icon: BarChart3, label: 'Performance', to: '/dashboard/manager/team?section=performance' },
+                            // { icon: BarChart3, label: 'Performance', to: '/dashboard/manager/team?section=performance' },
                             { icon: Zap, label: 'Workload Status', to: '/dashboard/manager/team?section=workload' },
                         ],
                     },
@@ -119,17 +101,14 @@ export const ManagerSidebar: React.FC = () => {
         ],
     }
 
-    // Sync active menu item with URL
     useEffect(() => {
         setActiveMenuItemPath(location.pathname)
         setIsDetailExpanded(true)
     }, [location.pathname])
 
-    // Get base path (without query string) for matching
     const getBasePath = (path: string) => path.split('?')[0]
     const currentBasePath = getBasePath(location.pathname)
 
-    // Icon rail items
     const iconRailItems = [
         {
             icon: BarChart3,
@@ -142,12 +121,6 @@ export const ManagerSidebar: React.FC = () => {
             to: '/dashboard/manager/tasks',
             tooltip: 'Tasks',
             isActive: currentBasePath === '/dashboard/manager/tasks',
-        },
-        {
-            icon: Zap,
-            to: '/dashboard/manager/workload',
-            tooltip: 'Workload',
-            isActive: currentBasePath === '/dashboard/manager/workload',
         },
         {
             icon: Users,
@@ -165,7 +138,6 @@ export const ManagerSidebar: React.FC = () => {
 
     return (
         <div className="flex">
-            {/* Icon Rail */}
             <SidebarIconRail
                 items={iconRailItems}
                 onLogout={handleLogout}
@@ -173,13 +145,11 @@ export const ManagerSidebar: React.FC = () => {
                 onToggleDetail={() => setIsDetailExpanded(!isDetailExpanded)}
             />
 
-            {/* Detail Sidebar */}
             <motion.aside
                 animate={{ width: isDetailExpanded ? 320 : 0, opacity: isDetailExpanded ? 1 : 0 }}
                 transition={{ duration: 0.3, ease: 'easeInOut' }}
                 className="bg-black h-screen border-r border-neutral-800 flex flex-col overflow-hidden"
             >
-                {/* Header */}
                 <div className="flex items-center justify-between p-4 border-b border-neutral-800">
                     <div className="font-semibold text-neutral-50 text-lg">Navigation</div>
                     <motion.button
@@ -191,12 +161,10 @@ export const ManagerSidebar: React.FC = () => {
                     </motion.button>
                 </div>
 
-                {/* Search */}
                 <div className="px-4 pt-4">
                     <SidebarSearch isCollapsed={false} />
                 </div>
 
-                {/* Menu Sections */}
                 <nav className="flex-1 overflow-y-auto px-2 py-4 space-y-6">
                     {sidebarData.sections.map((section, idx) => (
                         <MenuSection key={idx} title={section.title} isExpanded={isDetailExpanded}>

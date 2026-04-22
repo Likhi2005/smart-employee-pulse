@@ -1,5 +1,8 @@
 import React, { useState } from 'react'
 import { motion } from 'framer-motion'
+import { useSearchParams } from 'react-router-dom'
+import { PerformanceView } from '@/features/people/views/PerformanceView'
+import { WorkloadStatusView } from '@/features/people/views/WorkloadStatusView'
 import api from '@/services/api'
 import { CreateEmployeeForm } from './CreateEmployeeForm'
 import { EmployeeList } from './EmployeeList'
@@ -16,6 +19,9 @@ interface EditEmployeeData {
 }
 
 export const TeamTab = () => {
+    const [searchParams] = useSearchParams()
+    const section = searchParams.get('section') || 'all'
+
     const [isCreateOpen, setIsCreateOpen] = useState(false)
     const [activePanel, setActivePanel] = useState<ActivePanel>(null)
 
@@ -90,6 +96,14 @@ export const TeamTab = () => {
     const handleDeleteSuccess = () => {
         setDeleteEmployeeId(null)
         handleRefresh()
+    }
+
+    if (section === 'workload') {
+        return <WorkloadStatusView />
+    }
+
+    if (section === 'performance') {
+        return <PerformanceView />
     }
 
     return (
