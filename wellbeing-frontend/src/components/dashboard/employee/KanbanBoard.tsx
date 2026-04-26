@@ -61,13 +61,14 @@ interface KanbanBoardProps {
     onAccept: (id: string) => Promise<void>
     onReject: (id: string) => Promise<void>
     onComplete: (id: string) => Promise<void>
+    onOpenDetails?: (task: TaskItem) => void
 }
 
 // ============================================================
 // COMPONENT
 // ============================================================
 
-export function KanbanBoard({ columns, onAccept, onReject, onComplete }: KanbanBoardProps) {
+export function KanbanBoard({ columns, onAccept, onReject, onComplete, onOpenDetails }: KanbanBoardProps) {
     return (
         <div id="kanban-board" className="rounded-2xl border border-neutral-800 bg-neutral-900/40 overflow-hidden">
             {/* Header */}
@@ -121,6 +122,7 @@ export function KanbanBoard({ columns, onAccept, onReject, onComplete }: KanbanB
                                             onAccept={col.key === 'pending' ? onAccept : undefined}
                                             onReject={col.key === 'pending' ? onReject : undefined}
                                             onComplete={col.key === 'inProgress' ? onComplete : undefined}
+                                            onOpenDetails={onOpenDetails}
                                         />
                                     ))
                                 )}

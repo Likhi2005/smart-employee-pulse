@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { ShieldAlert, AlertTriangle, Send, UserMinus, HelpCircle, XCircle, Link } from 'lucide-react'
+import { ShieldAlert, AlertTriangle, Send, UserMinus, HelpCircle, XCircle, Link, ExternalLink } from 'lucide-react'
 import type { TaskItem } from '@/types'
 
 // ============================================================
@@ -29,13 +29,14 @@ function isBlocking(task: TaskItem): boolean {
 interface BlockersPanelProps {
     blockedTasks: TaskItem[]
     onReject: (id: string) => Promise<void>
+    onOpenDetails?: (task: TaskItem) => void
 }
 
 // ============================================================
 // COMPONENT
 // ============================================================
 
-export function BlockersPanel({ blockedTasks, onReject }: BlockersPanelProps) {
+export function BlockersPanel({ blockedTasks, onReject, onOpenDetails }: BlockersPanelProps) {
     const [toast, setToast] = useState<string | null>(null)
 
     function showToast(msg: string) {
@@ -121,6 +122,16 @@ export function BlockersPanel({ blockedTasks, onReject }: BlockersPanelProps) {
 
                                     {/* Actions */}
                                     <div className="mt-2.5 flex flex-wrap gap-1.5">
+                                        {onOpenDetails && (
+                                            <button
+                                                onClick={() => onOpenDetails(task)}
+                                                className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-neutral-800 border border-neutral-700 text-[11px] text-neutral-400 hover:bg-neutral-700 hover:text-neutral-200 transition-colors"
+                                                title="View Details"
+                                            >
+                                                <ExternalLink size={10} />
+                                                Details
+                                            </button>
+                                        )}
                                         <button
                                             onClick={() => showToast(`Ping sent to ${assignedByName}`)}
                                             className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-blue-500/10 border border-blue-500/20 text-[11px] text-blue-400 hover:bg-blue-500/20 transition-colors"

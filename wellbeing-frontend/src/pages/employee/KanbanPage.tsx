@@ -15,6 +15,7 @@ export default function KanbanPage() {
         onReject,
         onComplete,
         refetch,
+        setSelectedTask,
     } = useEmployeeDashboardCtx()
 
     return (
@@ -26,10 +27,11 @@ export default function KanbanPage() {
                     onAccept={onAccept}
                     onReject={onReject}
                     onComplete={onComplete}
+                    onOpenDetails={setSelectedTask}
                 />
 
                 {/* Right: Smart Focus */}
-                <FocusPanel bestNextTask={bestNextTask} onAccept={onAccept} />
+                <FocusPanel bestNextTask={bestNextTask} onAccept={onAccept} onOpenDetails={setSelectedTask} />
             </div>
         </PageWrapper>
     )

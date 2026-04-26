@@ -14,6 +14,7 @@ export default function PriorityInboxPage() {
         onReject,
         onComplete,
         refetch,
+        setSelectedTask,
     } = useEmployeeDashboardCtx()
 
     return (
@@ -24,6 +25,7 @@ export default function PriorityInboxPage() {
                 onAccept={onAccept}
                 onReject={onReject}
                 onComplete={onComplete}
+                onOpenDetails={setSelectedTask}
             />
         </PageWrapper>
     )

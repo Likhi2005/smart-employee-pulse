@@ -2,13 +2,14 @@ import { Outlet } from 'react-router-dom'
 import { EmployeeDashboardProvider, useEmployeeDashboardCtx } from '@/context/EmployeeDashboardContext'
 import { Sidebar } from '@/components/dashboard/employee/Sidebar'
 import { TopBar } from '@/components/dashboard/employee/TopBar'
+import { TaskDetailModal } from '@/components/dashboard/employee/TaskDetailModal'
 
 // ============================================================
 // INNER SHELL (has access to context)
 // ============================================================
 
 function EmployeeShell() {
-    const { dashboardData, loading, searchQuery, setSearchQuery, refetch } = useEmployeeDashboardCtx()
+    const { dashboardData, loading, searchQuery, setSearchQuery, refetch, selectedTask, setSelectedTask } = useEmployeeDashboardCtx()
     const pendingCount = dashboardData?.taskStats.pending ?? 0
 
     return (
@@ -32,6 +33,12 @@ function EmployeeShell() {
                     <Outlet />
                 </main>
             </div>
+
+            {/* Global Task Detail Modal */}
+            <TaskDetailModal 
+                task={selectedTask} 
+                onClose={() => setSelectedTask(null)} 
+            />
         </div>
     )
 }

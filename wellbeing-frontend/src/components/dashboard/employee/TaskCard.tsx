@@ -9,6 +9,7 @@ import {
     PlayCircle,
     ChevronDown,
     ChevronUp,
+    ExternalLink,
 } from 'lucide-react'
 
 // ============================================================
@@ -45,6 +46,7 @@ interface TaskCardProps {
     onAccept?: (id: string) => Promise<void>
     onReject?: (id: string) => Promise<void>
     onComplete?: (id: string) => Promise<void>
+    onOpenDetails?: (task: TaskItem) => void
     compact?: boolean
     showActions?: boolean
 }
@@ -58,6 +60,7 @@ export function TaskCard({
     onAccept,
     onReject,
     onComplete,
+    onOpenDetails,
     compact = false,
     showActions = true,
 }: TaskCardProps) {
@@ -189,6 +192,15 @@ export function TaskCard({
                 {/* Actions */}
                 {showActions && (
                     <div className="mt-3 flex flex-wrap gap-1.5">
+                        {onOpenDetails && (
+                            <button
+                                onClick={() => onOpenDetails(task)}
+                                className="inline-flex items-center gap-1.5 rounded-lg bg-neutral-800 border border-neutral-700 px-2.5 py-1 text-xs font-medium text-neutral-300 hover:bg-neutral-700 transition-colors mr-auto"
+                            >
+                                <ExternalLink size={12} />
+                                View Details
+                            </button>
+                        )}
                         {isPending && onAccept && (
                             <button
                                 onClick={() => handle('accept', onAccept)}

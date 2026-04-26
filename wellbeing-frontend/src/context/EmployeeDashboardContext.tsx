@@ -8,6 +8,8 @@ import { useEmployeeDashboard, type UseEmployeeDashboardReturn } from '@/hooks/u
 interface EmployeeDashboardContextValue extends UseEmployeeDashboardReturn {
     searchQuery: string
     setSearchQuery: (q: string) => void
+    selectedTask: import('@/types').TaskItem | null
+    setSelectedTask: (task: import('@/types').TaskItem | null) => void
 }
 
 // ============================================================
@@ -23,11 +25,14 @@ const EmployeeDashboardContext = createContext<EmployeeDashboardContextValue | n
 export function EmployeeDashboardProvider({ children }: { children: ReactNode }) {
     const dashboardHook = useEmployeeDashboard()
     const [searchQuery, setSearchQuery] = useState('')
+    const [selectedTask, setSelectedTask] = useState<import('@/types').TaskItem | null>(null)
 
     const value: EmployeeDashboardContextValue = {
         ...dashboardHook,
         searchQuery,
         setSearchQuery,
+        selectedTask,
+        setSelectedTask,
     }
 
     return (

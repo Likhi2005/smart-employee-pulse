@@ -1,5 +1,5 @@
 import React from 'react'
-import { Focus, Zap, Clock, AlertTriangle, PlayCircle, Target } from 'lucide-react'
+import { Focus, Zap, Clock, AlertTriangle, PlayCircle, Target, ExternalLink } from 'lucide-react'
 import type { TaskItem } from '@/types'
 
 // ============================================================
@@ -50,13 +50,14 @@ function getDeadlinePressureLabel(days: number | null): { label: string; color: 
 interface FocusPanelProps {
     bestNextTask: TaskItem | null
     onAccept: (id: string) => Promise<void>
+    onOpenDetails?: (task: TaskItem) => void
 }
 
 // ============================================================
 // COMPONENT
 // ============================================================
 
-export function FocusPanel({ bestNextTask, onAccept }: FocusPanelProps) {
+export function FocusPanel({ bestNextTask, onAccept, onOpenDetails }: FocusPanelProps) {
     if (!bestNextTask) {
         return (
             <div className="rounded-2xl border border-neutral-800 bg-neutral-900/50 p-5">
@@ -154,13 +155,24 @@ export function FocusPanel({ bestNextTask, onAccept }: FocusPanelProps) {
                 </div>
 
                 {/* CTA */}
-                <button
-                    onClick={() => onAccept(bestNextTask._id)}
-                    className="w-full flex items-center justify-center gap-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-neutral-950 font-semibold text-sm py-3 transition-colors"
-                >
-                    <PlayCircle size={16} />
-                    Start This Task
-                </button>
+                <div className="flex flex-col gap-2">
+                    <button
+                        onClick={() => onAccept(bestNextTask._id)}
+                        className="w-full flex items-center justify-center gap-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-neutral-950 font-semibold text-sm py-3 transition-colors"
+                    >
+                        <PlayCircle size={16} />
+                        Start This Task
+                    </button>
+                    {onOpenDetails && (
+                        <button
+                            onClick={() => onOpenDetails(bestNextTask)}
+                            className="w-full flex items-center justify-center gap-2 rounded-xl bg-transparent border border-neutral-700 hover:bg-neutral-800 text-neutral-300 font-medium text-sm py-2.5 transition-colors"
+                        >
+                            <ExternalLink size={14} />
+                            View Full Details
+                        </button>
+                    )}
+                </div>
             </div>
         </div>
     )

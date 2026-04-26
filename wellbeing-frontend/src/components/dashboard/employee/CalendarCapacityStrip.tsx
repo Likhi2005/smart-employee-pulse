@@ -44,6 +44,12 @@ function getLabelColor(effort: number): string {
     return 'text-emerald-400'
 }
 
+function calculateWeightedWorkload(task: TaskItem): number {
+    const priorityWeight = task.priority === 'high' ? 3 : task.priority === 'medium' ? 2 : 1;
+    const statusWeight = task.status === 'in-progress' ? 1.25 : task.status === 'pending' ? 1.0 : 0;
+    return (task.effort || 0) * priorityWeight * statusWeight;
+}
+
 // ============================================================
 // PROPS
 // ============================================================
@@ -69,7 +75,7 @@ export function CalendarCapacityStrip({ tasks, dashboardData }: CalendarCapacity
         })
         return {
             day,
-            effort: due.reduce((sum, t) => sum + (t.effort || 0), 0),
+            effort: due.reduce((sum, t) => sum + calculateWeightedWorkload(t), 0),
             taskCount: due.length,
             tasks: due,
         }
@@ -118,7 +124,7 @@ export function CalendarCapacityStrip({ tasks, dashboardData }: CalendarCapacity
                                 {/* Effort label */}
                                 {item.effort > 0 && (
                                     <span className={`text-[10px] font-medium ${getLabelColor(item.effort)}`}>
-                                        {item.effort}
+                                        {item.effort % 1 !== 0 ? item.effort.toFixed(2) : item.effort}
                                     </span>
                                 )}
 
@@ -128,7 +134,7 @@ export function CalendarCapacityStrip({ tasks, dashboardData }: CalendarCapacity
                                         <div
                                             className={`w-full rounded-t-md transition-all duration-500 ${getBarColor(item.effort)} ${isToday ? 'opacity-100' : 'opacity-60'}`}
                                             style={{ height: `${barH}px` }}
-                                            title={`${item.taskCount} task(s), ${item.effort} pts`}
+                                            title={`${item.taskCount} task(s), ${item.effort % 1 !== 0 ? item.effort.toFixed(2) : item.effort} pts`}
                                         />
                                     ) : (
                                         <div className="w-full h-1 rounded-full bg-neutral-800" />

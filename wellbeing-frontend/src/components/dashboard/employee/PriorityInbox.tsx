@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Inbox, ChevronDown, ChevronUp, HelpCircle, AlertOctagon, Clock, Zap } from 'lucide-react'
+import { Inbox, ChevronDown, ChevronUp, HelpCircle, AlertOctagon, Clock, Zap, ExternalLink } from 'lucide-react'
 import type { TaskItem } from '@/types'
 import { TaskCard } from './TaskCard'
 
@@ -28,21 +28,18 @@ function computeScore(task: TaskItem): number {
     return (PRIORITY_WEIGHT[task.priority] || 1) + getDueDateScore(task.dueDate) + getRiskScore(task.riskLevel)
 }
 
-function getLabel(task: TaskItem): { text: string; className: string } {
-    if ((task as any).taskState === 'REVIEW_PENDING') {
-        return { text: 'Waiting Review', className: 'bg-blue-500/15 text-blue-400 border-blue-500/30' }
+function getAttentionReason(task: TaskItem): string {
+    if (task.dueDate) {
+        const diffHours = (new Date(task.dueDate).getTime() - Date.now()) / (1000 * 60 * 60)
+        if (diffHours < 0) return 'Overdue'
+        if (diffHours < 48) {
+            if (diffHours < 24) return `Due in ${Math.ceil(diffHours)} hours`
+            return `Due in ${Math.ceil(diffHours / 24)} days`
+        }
     }
-    if (task.riskLevel === 'high') {
-        return { text: 'At Risk', className: 'bg-rose-500/15 text-rose-400 border-rose-500/30' }
-    }
-    if (!task.dueDate) {
-        return { text: 'No Deadline', className: 'bg-neutral-800 text-neutral-400 border-neutral-700' }
-    }
-    const diff = (new Date(task.dueDate).getTime() - Date.now()) / (1000 * 60 * 60)
-    if (diff < 0) return { text: 'Overdue', className: 'bg-rose-500/15 text-rose-400 border-rose-500/30' }
-    if (diff < 24) return { text: 'Due Soon', className: 'bg-amber-500/15 text-amber-400 border-amber-500/30' }
-    if ((task as any).isMandatory) return { text: 'Mandatory', className: 'bg-violet-500/15 text-violet-400 border-violet-500/30' }
-    return { text: 'Normal', className: 'bg-neutral-800 text-neutral-400 border-neutral-700' }
+    if (task.riskLevel === 'high') return 'Blocked by dependency'
+    if (task.priority === 'high' && task.status === 'pending') return 'High priority task pending'
+    return 'Needs review'
 }
 
 // ============================================================
@@ -55,13 +52,14 @@ interface PriorityInboxProps {
     onAccept: (id: string) => Promise<void>
     onReject: (id: string) => Promise<void>
     onComplete: (id: string) => Promise<void>
+    onOpenDetails?: (task: TaskItem) => void
 }
 
 // ============================================================
 // COMPONENT
 // ============================================================
 
-export function PriorityInbox({ tasks, searchQuery, onAccept, onReject, onComplete }: PriorityInboxProps) {
+export function PriorityInbox({ tasks, searchQuery, onAccept, onReject, onComplete, onOpenDetails }: PriorityInboxProps) {
     const [expanded, setExpanded] = useState(false)
     const [toastMsg, setToastMsg] = useState<string | null>(null)
 
@@ -113,7 +111,7 @@ export function PriorityInbox({ tasks, searchQuery, onAccept, onReject, onComple
                 )}
 
                 {visible.map((task) => {
-                    const label = getLabel(task)
+                    const attentionReason = getAttentionReason(task)
                     const isPending = task.status === 'pending'
                     const isInProgress = task.status === 'in-progress'
                     const isMandatory = (task as any).isMandatory
@@ -129,25 +127,38 @@ export function PriorityInbox({ tasks, searchQuery, onAccept, onReject, onComple
                             <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2 mb-1 flex-wrap">
                                     <p className="text-sm font-medium text-neutral-100 truncate">{task.title}</p>
-                                    <span className={`inline-flex items-center rounded-md border px-1.5 py-0.5 text-[10px] font-medium ${label.className}`}>
-                                        {label.text}
-                                    </span>
+                                    {task.priority && (
+                                        <span className={`inline-flex items-center rounded-md border px-1.5 py-0.5 text-[10px] font-medium ${
+                                            task.priority === 'high' ? 'bg-rose-500/15 text-rose-400 border-rose-500/30' :
+                                            task.priority === 'medium' ? 'bg-amber-500/15 text-amber-400 border-amber-500/30' :
+                                            'bg-blue-500/15 text-blue-400 border-blue-500/30'
+                                        }`}>
+                                            {task.priority}
+                                        </span>
+                                    )}
+                                </div>
+                                <div className="mb-2 inline-flex items-center rounded-md bg-neutral-800/80 border border-neutral-700 px-2 py-1">
+                                    <AlertOctagon size={12} className="text-amber-400 mr-1.5" />
+                                    <span className="text-xs font-medium text-amber-400">{attentionReason}</span>
                                 </div>
                                 <div className="flex items-center gap-3 text-[11px] text-neutral-500">
                                     {task.dueDate && (
                                         <span><Clock size={10} className="inline mr-0.5" />{new Date(task.dueDate).toLocaleDateString()}</span>
-                                    )}
-                                    <span><Zap size={10} className="inline mr-0.5" />{task.effort} pts</span>
-                                    {task.priority && (
-                                        <span className={task.priority === 'high' ? 'text-rose-400' : task.priority === 'medium' ? 'text-amber-400' : 'text-blue-400'}>
-                                            {task.priority} priority
-                                        </span>
                                     )}
                                 </div>
                             </div>
 
                             {/* Actions */}
                             <div className="flex items-center gap-1.5 shrink-0 flex-wrap justify-end">
+                                {onOpenDetails && (
+                                    <button
+                                        onClick={() => onOpenDetails(task)}
+                                        className="p-1.5 rounded-md border border-neutral-700 text-neutral-400 hover:text-neutral-200 hover:bg-neutral-800 transition-colors"
+                                        title="View Details"
+                                    >
+                                        <ExternalLink size={14} />
+                                    </button>
+                                )}
                                 {isPending && (
                                     <button
                                         onClick={() => onAccept(task._id)}
