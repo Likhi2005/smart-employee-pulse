@@ -12,7 +12,7 @@ const initializeAI = () => {
         const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
         return {
             provider: 'gemini',
-            client: genAI.getGenerativeModel({ model: 'gemini-pro' }),
+            client: genAI.getGenerativeModel({ model: 'gemini-2.0-flash' }),
         };
     } else if (aiProvider === 'groq' && process.env.GROQ_API_KEY) {
         return {
@@ -243,22 +243,23 @@ const generateTaskBreakdown = async (taskTitle, taskDescription, taskEffort) => 
 You are a project management expert breaking down complex tasks into subtasks.
 
 Main Task: "${taskTitle}"
-Description: "${taskDescription}"
+Description: "${taskDescription || ''}"
 Total Effort: ${taskEffort} hours
 
-Break this task into 3-5 actionable subtasks. For each subtask, estimate effort in hours.
+Break this task into 4-8 actionable subtasks that together sum to approximately ${taskEffort} hours.
+For each subtask, assign a priority (low, medium, or high) based on its criticality.
 
-Respond ONLY with JSON:
+Respond ONLY with valid JSON, no markdown, no extra text:
 {
   "subtasks": [
     {
       "title": "subtask title",
-      "description": "what to do",
-      "effort": estimated_hours,
-      "dependencies": ["previous subtask name or null"]
+      "description": "clear description of what to do",
+      "effort": estimated_hours_as_number,
+      "priority": "low|medium|high"
     }
   ],
-  "breakdownStrategy": "explanation of how task was broken down"
+  "breakdownStrategy": "brief explanation of breakdown approach"
 }
 `;
 
@@ -271,23 +272,96 @@ Respond ONLY with JSON:
                 messages: [{ role: 'user', content: prompt }],
                 model: 'mixtral-8x7b-32768',
                 temperature: 0.7,
-                max_tokens: 600,
+                max_tokens: 800,
             });
             response = result.choices[0].message.content;
         }
 
-        const jsonMatch = response.match(/\{[\s\S]*\}/);
+        // Strip markdown code fences if present
+        const cleaned = response.replace(/```(?:json)?/gi, '').replace(/```/g, '').trim();
+        const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
         if (!jsonMatch) {
-            throw new Error('Failed to parse AI response');
+            throw new Error('Failed to parse AI response as JSON');
         }
+
+        const parsed = JSON.parse(jsonMatch[0]);
+        // Return normalized subtasks array directly
+        const subtasks = (parsed.subtasks || []).map(t => ({
+            title: t.title || 'Untitled Task',
+            description: t.description || '',
+            effort: Number(t.effort) || 2,
+            priority: ['low', 'medium', 'high'].includes(t.priority) ? t.priority : 'medium',
+        }));
+
+        return {
+            subtasks,
+            breakdownStrategy: parsed.breakdownStrategy || '',
+        };
+    } catch (error) {
+        console.error('Error generating task breakdown:', error);
+        throw new Error(`AI breakdown failed: ${error.message}`);
+    }
+};
+
+// ============================================================
+// 5. AI-POWERED BULK DISTRIBUTION (Policy-Aware)
+// ============================================================
+const aiDistributeTasks = async (tasks, employees, companyPolicyContext) => {
+    try {
+        const ai = initializeAI();
+
+        const taskList = tasks.map((t, i) => `${i + 1}. "${t.title}" (effort: ${t.effort}h, priority: ${t.priority})`).join('\n');
+        const empList = employees.map(e => `- ${e.fullName} | Workload: ${e.currentWorkload}% | Skills: ${(e.skills || []).join(', ') || 'General'}`).join('\n');
+
+        const prompt = `
+You are a smart task distribution engine for a team management platform.
+
+Team members and their current state:
+${empList}
+
+Tasks to distribute:
+${taskList}
+
+Rules:
+1. Balance workload — do not assign more than 2 tasks to the same person if others are available
+2. Match skills where possible
+3. Higher priority tasks go to lower-workload people
+4. Each task must be assigned to exactly one person
+
+Respond ONLY with valid JSON, no markdown:
+{
+  "assignments": [
+    {
+      "taskTitle": "exact task title",
+      "assigneeName": "exact employee fullName",
+      "reason": "1-sentence explanation referencing workload or skill"
+    }
+  ]
+}
+`;
+
+        let response;
+        if (ai.provider === 'gemini') {
+            const result = await ai.client.generateContent(prompt);
+            response = result.response.text();
+        } else if (ai.provider === 'groq') {
+            const result = await ai.client.chat.completions.create({
+                messages: [{ role: 'user', content: prompt }],
+                model: 'mixtral-8x7b-32768',
+                temperature: 0.5,
+                max_tokens: 1200,
+            });
+            response = result.choices[0].message.content;
+        }
+
+        const cleaned = response.replace(/```(?:json)?/gi, '').replace(/```/g, '').trim();
+        const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
+        if (!jsonMatch) throw new Error('Failed to parse AI distribution response');
 
         return JSON.parse(jsonMatch[0]);
     } catch (error) {
-        console.error('Error generating task breakdown:', error);
-        return {
-            success: false,
-            reason: `Breakdown generation failed: ${error.message}`,
-        };
+        console.error('AI distribution error:', error);
+        throw new Error(`AI distribution failed: ${error.message}`);
     }
 };
 
@@ -383,4 +457,5 @@ module.exports = {
     smartAssignTask,
     generateTaskBreakdown,
     generatePerformanceInsights,
+    aiDistributeTasks,
 };

@@ -4,8 +4,9 @@ import { TaskList } from './TaskList'
 import { TaskCreatePage } from './TaskCreatePage'
 import { TaskAssignmentHistoryPage } from './TaskAssignmentHistoryPage'
 import { TaskTemplatesPage } from './TaskTemplatesPage'
+import { AIOrchestrationPage } from './AIOrchestrationPage'
 
-type TasksSection = 'list' | 'create' | 'history' | 'templates'
+type TasksSection = 'list' | 'create' | 'history' | 'templates' | 'ai-orchestration'
 
 export function TasksTab() {
     const [searchParams] = useSearchParams()
@@ -15,6 +16,7 @@ export function TasksTab() {
         if (section === 'history') return 'Assignment History'
         if (section === 'templates') return 'Task Templates'
         if (section === 'create') return 'Task Studio'
+        if (section === 'ai-orchestration') return 'AI Orchestration Center'
         return 'All Tasks'
     }, [section])
 
@@ -29,6 +31,7 @@ export function TasksTab() {
             {section === 'create' && <TaskCreatePage />}
             {section === 'history' && <TaskAssignmentHistoryPage />}
             {section === 'templates' && <TaskTemplatesPage />}
+            {section === 'ai-orchestration' && <AIOrchestrationPage />}
         </div>
     )
 }

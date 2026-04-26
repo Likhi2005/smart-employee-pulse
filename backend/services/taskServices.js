@@ -878,6 +878,118 @@ async function createTaskFromTemplate(payload, { managerId, companyId }) {
     }
 }
 
+async function createBulkTasks(tasksPayload, { managerId, companyId }) {
+    const createdTasks = []
+    for (const taskPayload of tasksPayload) {
+        // Run policy validation first to ensure safety
+        const policyResult = await evaluateTaskPolicy({
+            taskInput: {
+                title: taskPayload.title,
+                effort: Number(taskPayload.effort || 1),
+                priority: taskPayload.priority || 'medium',
+                isMandatory: Boolean(taskPayload.isMandatory),
+            },
+            companyId
+        })
+
+        if (policyResult.status === 'block') {
+            throw new Error(`Policy blocked creation of task: ${taskPayload.title}. Blockers: ${policyResult.blockers.join(', ')}`)
+        }
+
+        const task = await createTask(taskPayload, { managerId, companyId })
+        createdTasks.push(task)
+    }
+    return createdTasks
+}
+
+async function assignBulkTasks(assignmentsPayload, { managerId, companyId }) {
+    const assignedTasks = []
+    for (const assignment of assignmentsPayload) {
+        const result = await assignTask(
+            {
+                taskId: assignment.taskId,
+                employeeId: assignment.employeeId,
+                assignmentMode: 'manual'
+            },
+            { managerId, companyId }
+        )
+        assignedTasks.push(result)
+    }
+    return assignedTasks
+}
+
+async function distributeBulkTasks(taskIds, { companyId }) {
+    const objectIds = taskIds
+        .filter(id => mongoose.Types.ObjectId.isValid(id))
+        .map(id => new mongoose.Types.ObjectId(id))
+
+    // Fetch tasks — allow assigned or unassigned since we may be re-distributing
+    const tasks = await Task.find({
+        _id: { $in: objectIds },
+        companyId,
+        isDeleted: { $ne: true },
+    })
+
+    if (!tasks.length) throw new Error('No tasks found for given IDs')
+
+    // 2. Fetch all employees to track simulated workload
+    const employees = await User.find({
+        companyId,
+        role: 'employee',
+        isActive: true,
+    }).lean()
+
+    // 3. Create a simulated state
+    const simulatedWorkloads = {}
+    employees.forEach(emp => {
+        simulatedWorkloads[emp._id.toString()] = emp.currentWorkload || 0
+    })
+
+    const distributionMap = []
+
+    // 4. Iteratively rank and distribute
+    for (const task of tasks) {
+        // Temporarily patch the DB values for ranking with our simulated workload
+        const currentEmpData = employees.map(emp => ({
+            ...emp,
+            currentWorkload: simulatedWorkloads[emp._id.toString()]
+        }))
+        
+        // Custom lightweight ranker since rankTaskCandidates pulls fresh from DB
+        let topCandidate = null
+        let highestScore = -Infinity
+
+        for (const emp of currentEmpData) {
+            // Simplified calculation using ruleEngine logic
+            const workloadNormalized = ruleEngineService.normalizeWorkload(emp.currentWorkload)
+            const score = (100 - workloadNormalized) * 0.35 + (emp.performanceScore || 0) * 0.20
+            
+            if (score > highestScore) {
+                highestScore = score
+                topCandidate = emp
+            }
+        }
+
+        if (topCandidate) {
+            // Assign
+            distributionMap.push({
+                taskId: task._id,
+                taskTitle: task.title,
+                employeeId: topCandidate._id,
+                employeeName: topCandidate.fullName,
+                effort: task.effort,
+                projectedWorkload: simulatedWorkloads[topCandidate._id.toString()] + task.effort,
+                reason: 'Algorithmic distribution based on workload balancing.'
+            })
+
+            // Update simulated workload
+            simulatedWorkloads[topCandidate._id.toString()] += task.effort
+        }
+    }
+
+    return distributionMap
+}
+
 module.exports = {
     TASK_PUBLIC_ID_REGEX,
     isTaskPublicId,
@@ -902,4 +1014,7 @@ module.exports = {
     validateTaskPolicy,
     rankTaskCandidates,
     createTaskFromTemplate,
+    createBulkTasks,
+    assignBulkTasks,
+    distributeBulkTasks,
 }

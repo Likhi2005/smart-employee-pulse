@@ -12,6 +12,12 @@ import { TaskListHeader } from './TaskListHeader'
 import { TaskFiltersBar } from './TaskFiltersBar'
 import { TaskTable } from './TaskTable'
 import { TaskDetailsDrawer } from './TaskDetailsDrawer'
+import { BulkAssignmentReviewModal } from './BulkAssignmentReviewModal'
+import { Sparkles } from 'lucide-react'
+import {
+    distributeBulkTasks,
+    assignBulkTasks,
+} from '@/services/taskService'
 
 type SavedViewKey = 'all' | 'high-risk' | 'unassigned' | 'due-soon' | 'completed'
 
@@ -106,6 +112,10 @@ export function TaskList() {
 
     const [bulkBusy, setBulkBusy] = useState(false)
     const [bulkMessage, setBulkMessage] = useState('')
+
+    const [isBulkReviewOpen, setIsBulkReviewOpen] = useState(false)
+    const [bulkMapping, setBulkMapping] = useState<any[]>([])
+    const [isBulkAssigning, setIsBulkAssigning] = useState(false)
 
     const isDrawerOpen = Boolean(selectedTaskIdentifier)
     const selectedCount = selectedRows.length
@@ -259,6 +269,36 @@ export function TaskList() {
         }
     }
 
+    const handleBulkDistribute = async () => {
+        if (!selectedRows.length) return
+        setBulkBusy(true)
+        setBulkMessage('')
+        try {
+            const mapping = await distributeBulkTasks(selectedRows)
+            setBulkMapping(mapping)
+            setIsBulkReviewOpen(true)
+        } catch (err: any) {
+            setBulkMessage(err?.response?.data?.message || 'AI distribution failed.')
+        } finally {
+            setBulkBusy(false)
+        }
+    }
+
+    const handleConfirmBulkAssign = async (assignments: Array<{ taskId: string; employeeId: string }>) => {
+        setIsBulkAssigning(true)
+        try {
+            await assignBulkTasks(assignments)
+            setBulkMessage(`Successfully assigned ${assignments.length} tasks via AI.`)
+            setIsBulkReviewOpen(false)
+            setSelectedRows([])
+            await loadTasks(filters)
+        } catch (err: any) {
+            setBulkMessage(err?.response?.data?.message || 'Final assignment failed.')
+        } finally {
+            setIsBulkAssigning(false)
+        }
+    }
+
     return (
         <div
             className={
@@ -319,6 +359,15 @@ export function TaskList() {
                                     </button>
                                     <button
                                         type="button"
+                                        disabled={bulkBusy}
+                                        onClick={handleBulkDistribute}
+                                        className="flex items-center gap-1.5 rounded-lg border border-amber-500/50 bg-amber-500/10 px-3 py-1.5 text-xs font-semibold text-amber-500 hover:bg-amber-500 hover:text-neutral-950 disabled:opacity-50 transition-colors"
+                                    >
+                                        <Sparkles size={14} />
+                                        AI Smart Distribute
+                                    </button>
+                                    <button
+                                        type="button"
                                         onClick={() => setSelectedRows([])}
                                         className="rounded-lg border border-neutral-700 bg-neutral-900 px-3 py-1.5 text-xs text-neutral-200 hover:bg-neutral-800"
                                     >
@@ -360,6 +409,15 @@ export function TaskList() {
                 loading={drawerLoading}
                 task={selectedTask}
                 onClose={closeDrawer}
+            />
+
+            <BulkAssignmentReviewModal
+                isOpen={isBulkReviewOpen}
+                onClose={() => setIsBulkReviewOpen(false)}
+                mapping={bulkMapping}
+                employees={assignees}
+                onConfirm={handleConfirmBulkAssign}
+                isSubmitting={isBulkAssigning}
             />
         </div>
     )

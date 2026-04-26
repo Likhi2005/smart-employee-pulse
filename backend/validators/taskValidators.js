@@ -215,6 +215,23 @@ const createFromTemplateValidation = [
     body('isMandatory').optional().isBoolean(),
 ]
 
+const bulkCreateValidation = [
+    body('tasks').isArray({ min: 1 }).withMessage('tasks array is required'),
+    body('tasks.*.title').trim().notEmpty().withMessage('Task title required'),
+    body('tasks.*.effort').isInt({ min: 1 }).withMessage('Effort must be at least 1'),
+    body('tasks.*.priority').optional().isIn(['low', 'medium', 'high']),
+]
+
+const bulkAssignValidation = [
+    body('assignments').isArray({ min: 1 }).withMessage('assignments array is required'),
+    body('assignments.*.taskId').notEmpty().withMessage('taskId required'),
+    body('assignments.*.employeeId').notEmpty().withMessage('employeeId required'),
+]
+
+const bulkDistributeValidation = [
+    body('taskIds').isArray({ min: 1 }).withMessage('taskIds array is required'),
+]
+
 module.exports = {
     handleValidationErrors,
     taskIdentifierValidation,
@@ -236,4 +253,7 @@ module.exports = {
     rankCandidatesValidation,
     createFromTemplateValidation,
     approveTaskValidation,
+    bulkCreateValidation,
+    bulkAssignValidation,
+    bulkDistributeValidation,
 }

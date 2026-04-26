@@ -302,3 +302,52 @@ export async function deleteTaskTemplate(templateId: string) {
     const response = await api.delete(`/tasks/templates/${templateId}`)
     return response.data
 }
+
+export async function breakDownTask(payload: { title: string; description?: string; effort: number }) {
+    const response = await api.post('/ai/break-down-task', payload)
+    return response.data?.breakdown as Array<{
+        title: string
+        description: string
+        effort: number
+        priority: TaskPriority
+    }>
+}
+
+export async function createBulkTasks(tasks: CreateTaskPayload[]) {
+    const response = await api.post('/tasks/bulk-create', { tasks })
+    return response.data
+}
+
+export async function distributeBulkTasks(taskIds: string[]) {
+    const response = await api.post('/tasks/bulk-distribute', { taskIds })
+    return response.data?.mapping as Array<{
+        taskId: string
+        taskTitle: string
+        employeeId: string
+        employeeName: string
+        projectedWorkload: number
+        reason: string
+    }>
+}
+
+export async function assignBulkTasks(assignments: Array<{ taskId: string; employeeId: string }>) {
+    const response = await api.post('/tasks/bulk-assign', { assignments })
+    return response.data
+}
+
+export async function aiDistributeTasks(tasks: Array<{ title: string; effort: number; priority: string }>) {
+    const response = await api.post('/ai/ai-distribute', { tasks })
+    return response.data?.mapping as Array<{
+        taskIndex: number
+        taskTitle: string
+        effort: number
+        priority: string
+        employeeId: string
+        employeeName: string
+        employeeEmail: string
+        projectedWorkload: number
+        reason: string
+        policyStatus: string
+        policyWarnings: string[]
+    }>
+}

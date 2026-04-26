@@ -2,6 +2,8 @@ const express = require('express');
 const { param } = require('express-validator');
 const aiService = require('../services/aiService');
 const { authenticate, authorizeManager } = require('../middlewares/auth');
+const User = require('../models/User');
+const { evaluateTaskPolicy } = require('../services/policyService');
 
 const router = express.Router();
 
@@ -98,14 +100,117 @@ router.post(
 
             const result = await aiService.generateTaskBreakdown(title, description || '', effort);
 
+            // Return the subtasks array as 'breakdown' for the frontend
             res.json({
                 message: 'Task breakdown generated',
-                breakdown: result,
+                breakdown: result.subtasks || [],
+                breakdownStrategy: result.breakdownStrategy || '',
             });
         } catch (error) {
             console.error('Error generating breakdown:', error);
             res.status(500).json({
                 message: 'Error generating breakdown',
+                error: error.message,
+            });
+        }
+    }
+);
+
+// ============================================================
+// 5. AI-POWERED BULK DISTRIBUTION
+// ============================================================
+router.post(
+    '/ai-distribute',
+    authenticate,
+    authorizeManager,
+    async (req, res) => {
+        try {
+            const { tasks } = req.body;
+            const companyId = req.user.companyId;
+
+            if (!tasks || !tasks.length) {
+                return res.status(400).json({ message: 'Tasks array is required' });
+            }
+
+            // Fetch employees with skills
+            const employees = await User.find({
+                companyId,
+                role: 'employee',
+                isActive: true,
+            }).select('_id fullName email currentWorkload skills department').lean();
+
+            if (!employees.length) {
+                return res.status(400).json({ message: 'No active employees found for distribution' });
+            }
+
+            // Run policy validation on each task
+            const policyResults = await Promise.all(
+                tasks.map(async (task) => {
+                    const result = await evaluateTaskPolicy({
+                        taskInput: {
+                            title: task.title,
+                            effort: Number(task.effort || 1),
+                            priority: task.priority || 'medium',
+                            isMandatory: false,
+                        },
+                        companyId,
+                    });
+                    return { taskTitle: task.title, policyResult: result };
+                })
+            );
+
+            // Check for blockers
+            const blocked = policyResults.filter(r => r.policyResult.status === 'block');
+            if (blocked.length > 0) {
+                return res.status(422).json({
+                    message: 'Policy validation blocked some tasks',
+                    blockedTasks: blocked.map(b => ({
+                        taskTitle: b.taskTitle,
+                        blockers: b.policyResult.blockers,
+                    })),
+                });
+            }
+
+            // Run AI distribution
+            const aiResult = await aiService.aiDistributeTasks(tasks, employees);
+            const aiAssignments = aiResult.assignments || [];
+
+            // Map AI names back to employee IDs
+            const mapping = tasks.map((task, idx) => {
+                const aiAssignment = aiAssignments.find(
+                    a => a.taskTitle?.toLowerCase().trim() === task.title?.toLowerCase().trim()
+                ) || aiAssignments[idx % aiAssignments.length];
+
+                const employee = employees.find(
+                    e => e.fullName?.toLowerCase().trim() === aiAssignment?.assigneeName?.toLowerCase().trim()
+                ) || employees[idx % employees.length];
+
+                const policyStatus = policyResults.find(p => p.taskTitle === task.title)?.policyResult?.status || 'pass';
+
+                return {
+                    taskIndex: idx,
+                    taskTitle: task.title,
+                    effort: task.effort,
+                    priority: task.priority,
+                    employeeId: String(employee._id),
+                    employeeName: employee.fullName,
+                    employeeEmail: employee.email,
+                    projectedWorkload: Math.min(100, Number(employee.currentWorkload || 0) + Number(task.effort || 0)),
+                    reason: aiAssignment?.reason || 'Assigned based on workload balancing.',
+                    policyStatus,
+                    policyWarnings: policyResults.find(p => p.taskTitle === task.title)?.policyResult?.warnings || [],
+                };
+            });
+
+            res.json({
+                message: 'AI distribution completed',
+                mapping,
+                employeeCount: employees.length,
+            });
+        } catch (error) {
+            console.error('Error in AI distribution:', error);
+            res.status(500).json({
+                message: 'AI distribution failed',
                 error: error.message,
             });
         }

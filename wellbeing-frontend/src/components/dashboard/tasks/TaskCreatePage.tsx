@@ -4,6 +4,7 @@ import { TaskCreateHeader, type CreateStep } from './TaskCreateHeader'
 import { TaskCreateFormPanel, type DraftFormValues, type EnrichFormValues } from './TaskCreateFormPanel'
 import { TaskAssignPanel, type EmployeeCandidate } from './TaskAssignPanel'
 import { TaskStateIndicator } from './TaskStateIndicator'
+import { Sparkles, User } from 'lucide-react'
 import {
     assignTask,
     createTask,
@@ -382,6 +383,8 @@ export function TaskCreatePage() {
         }
     }
 
+
+
     return (
         <section className="rounded-2xl border border-neutral-800 bg-neutral-950">
             <TaskCreateHeader
@@ -425,6 +428,7 @@ export function TaskCreatePage() {
 
             <div className="border-t border-neutral-800 px-4 py-4 sm:px-5">
                 <TaskStateIndicator state={taskState} />
+                {/* existing policy results */}
                 {!!policyResult?.blockers?.length && (
                     <div className="mt-3 rounded-lg border border-red-900/40 bg-red-950/20 p-3">
                         <p className="text-sm font-semibold text-red-300">Policy blockers</p>

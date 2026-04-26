@@ -1381,6 +1381,78 @@ const getSuggestedAssignee = async (req, res) => {
     }
 };
 
+// ============================================================
+// 20. BULK TASK CREATION
+// ============================================================
+const createBulkTasks = async (req, res) => {
+    try {
+        const { tasks } = req.body;
+        const managerId = req.user.userId;
+        const companyId = req.user.companyId;
+
+        const createdTasks = await taskServices.createBulkTasks(tasks, { managerId, companyId });
+
+        res.status(201).json({
+            message: 'Bulk tasks created successfully',
+            count: createdTasks.length,
+            tasks: createdTasks,
+        });
+    } catch (error) {
+        console.error('Create bulk tasks error:', error);
+        res.status(400).json({
+            message: 'Failed to create bulk tasks',
+            error: error.message,
+        });
+    }
+};
+
+// ============================================================
+// 21. BULK TASK ASSIGNMENT
+// ============================================================
+const assignBulkTasks = async (req, res) => {
+    try {
+        const { assignments } = req.body;
+        const managerId = req.user.userId;
+        const companyId = req.user.companyId;
+
+        const assignedTasks = await taskServices.assignBulkTasks(assignments, { managerId, companyId });
+
+        res.json({
+            message: 'Bulk tasks assigned successfully',
+            count: assignedTasks.length,
+            tasks: assignedTasks,
+        });
+    } catch (error) {
+        console.error('Assign bulk tasks error:', error);
+        res.status(400).json({
+            message: 'Failed to assign bulk tasks',
+            error: error.message,
+        });
+    }
+};
+
+// ============================================================
+// 22. DISTRIBUTE BULK TASKS (AI MAPPING)
+// ============================================================
+const distributeBulkTasks = async (req, res) => {
+    try {
+        const { taskIds } = req.body;
+        const companyId = req.user.companyId;
+
+        const distributionMap = await taskServices.distributeBulkTasks(taskIds, { companyId });
+
+        res.json({
+            message: 'Bulk tasks distribution mapped',
+            mapping: distributionMap,
+        });
+    } catch (error) {
+        console.error('Distribute bulk tasks error:', error);
+        res.status(400).json({
+            message: 'Failed to distribute bulk tasks',
+            error: error.message,
+        });
+    }
+};
 
 module.exports = {
     createTask,
@@ -1407,4 +1479,7 @@ module.exports = {
     createTaskFromTemplate,
     updateTaskState,
     approveTask,
+    createBulkTasks,
+    assignBulkTasks,
+    distributeBulkTasks,
 };

@@ -21,6 +21,9 @@ const {
     createFromTemplateValidation,
     taskStateValidation,
     approveTaskValidation,
+    bulkCreateValidation,
+    bulkAssignValidation,
+    bulkDistributeValidation,
 } = require('../validators/taskValidators')
 
 const router = express.Router()
@@ -235,6 +238,34 @@ router.post(
     createFromTemplateValidation,
     handleValidationErrors,
     taskController.createTaskFromTemplate
+)
+
+// Bulk Operations
+router.post(
+    '/bulk-create',
+    authenticate,
+    authorizeManager,
+    bulkCreateValidation,
+    handleValidationErrors,
+    taskController.createBulkTasks
+)
+
+router.post(
+    '/bulk-assign',
+    authenticate,
+    authorizeManager,
+    bulkAssignValidation,
+    handleValidationErrors,
+    taskController.assignBulkTasks
+)
+
+router.post(
+    '/bulk-distribute',
+    authenticate,
+    authorizeManager,
+    bulkDistributeValidation,
+    handleValidationErrors,
+    taskController.distributeBulkTasks
 )
 
 module.exports = router

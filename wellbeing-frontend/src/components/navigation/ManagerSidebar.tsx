@@ -52,6 +52,7 @@ export const ManagerSidebar: React.FC = () => {
                         subItems: [
                             { label: 'All Tasks', to: '/dashboard/manager/tasks?section=list' },
                             { label: 'Assign New', to: '/dashboard/manager/tasks?section=create' },
+                            { label: 'AI Automation', to: '/dashboard/manager/tasks?section=ai-orchestration' },
                             { label: 'History', to: '/dashboard/manager/tasks?section=history' },
                             { label: 'Templates', to: '/dashboard/manager/tasks?section=templates' },
                         ],

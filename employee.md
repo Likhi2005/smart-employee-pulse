@@ -76,5 +76,4 @@ A FAANG-level employee dashboard should feel like a work command center, not a t
 4. Dependency and blocker graph
 5. Daily capacity estimation
 6. Personal performance trend (last 30 days)
-
 If you want, next I can give you a concrete screen-by-screen wireframe spec with exact component tree, spacing grid, and token-based color system so you can implement it directly in your frontend.
