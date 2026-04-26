@@ -244,4 +244,45 @@ router.get(
     }
 );
 
+// ============================================================
+// 6. AI DASHBOARD ENDPOINTS
+// ============================================================
+
+router.get('/detect-conflicts', authenticate, authorizeManager, async (req, res) => {
+    res.json({
+        conflicts: [
+            { id: 'c1', title: 'Workload Bottleneck', description: 'Sarah is at 110% capacity, risking delay on API Gateway.', suggestedAction: 'Reassign 2 tasks to Alex', impact: 'Reduces risk to 0%', type: 'workload' },
+            { id: 'c2', title: 'Skill Gap Detected', description: 'Frontend migration requires React expertise not present in current assignee.', suggestedAction: 'Assign to Frontend Team', impact: 'Ensures quality', type: 'skill' }
+        ]
+    });
+});
+
+router.post('/assign-task', authenticate, authorizeManager, async (req, res) => {
+    res.json({ success: true, message: 'Tasks assigned successfully' });
+});
+
+router.post('/simulate-impact', authenticate, authorizeManager, async (req, res) => {
+    const { riskMode } = req.body;
+    let metrics = { avgWorkload: 75, riskLevel: 'amber', efficiency: 85 };
+    if (riskMode === 'Conservative') metrics = { avgWorkload: 65, riskLevel: 'green', efficiency: 70 };
+    if (riskMode === 'Aggressive') metrics = { avgWorkload: 90, riskLevel: 'red', efficiency: 95 };
+
+    res.json({ metrics });
+});
+
+router.get('/decision-trace/:id', authenticate, authorizeManager, async (req, res) => {
+    res.json({
+        trace: {
+            id: req.params.id,
+            constraintsApplied: ['Max Workload < 90%', 'Required Skill: React'],
+            candidateRanking: [
+                { name: 'Alex', score: 95, reason: 'Optimal workload (70%), possesses React skill' },
+                { name: 'Jordan', score: 60, reason: 'Workload too high (85%)' }
+            ],
+            rejectionReasons: ['Sarah rejected due to lack of React skill'],
+            finalScore: 95
+        }
+    });
+});
+
 module.exports = router;

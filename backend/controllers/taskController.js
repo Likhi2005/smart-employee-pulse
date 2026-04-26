@@ -440,8 +440,20 @@ const acceptTask = async (req, res) => {
             return res.status(404).json({ message: 'Task not found' });
         }
 
+        console.log('Accepting task. Current status:', task.status, 'State:', task.taskState);
+
+        // If already accepted/in-progress, return success (idempotent)
+        if (task.status === 'in-progress' || task.status === 'accepted') {
+            return res.json({ 
+                message: 'Task is already in progress', 
+                task: taskServices.serializeTask(task) 
+            });
+        }
+
         if (task.status !== 'pending') {
-            return res.status(400).json({ message: 'Task cannot be accepted in current status' });
+            return res.status(400).json({ 
+                message: `Task cannot be accepted in current status: ${task.status}` 
+            });
         }
 
         task.status = 'in-progress';
@@ -455,7 +467,7 @@ const acceptTask = async (req, res) => {
             taskId: task._id,
             companyId,
             actorId: employeeId,
-            newState: 'ASSIGNED',
+            newState: 'IN_PROGRESS',
             reason: 'Employee accepted assigned task',
             metadata: { action: 'accepted' },
         })
@@ -601,8 +613,18 @@ const completeTask = async (req, res) => {
             return res.status(404).json({ message: 'Task not found' });
         }
 
-        if (task.status !== 'in-progress') {
-            return res.status(400).json({ message: 'Only in-progress tasks can be completed' });
+        // If already completed, return success (idempotent)
+        if (task.status === 'completed') {
+            return res.json({ 
+                message: 'Task already completed', 
+                task: taskServices.serializeTask(task) 
+            });
+        }
+
+        if (task.status !== 'in-progress' && task.status !== 'accepted') {
+            return res.status(400).json({ 
+                message: `Only in-progress tasks can be completed. Current status: ${task.status}` 
+            });
         }
 
         // Update task
@@ -615,8 +637,8 @@ const completeTask = async (req, res) => {
             taskId: task._id,
             companyId,
             actorId: employeeId,
-            newState: 'REVIEW_PENDING',
-            reason: 'Task completed and awaiting manager approval',
+            newState: 'COMPLETED',
+            reason: 'Task completed by employee',
             metadata: { action: 'completed' },
         })
 

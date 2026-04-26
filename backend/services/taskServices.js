@@ -33,7 +33,9 @@ const ALLOWED_STATE_TRANSITIONS = {
     ENRICHED: new Set(['POLICY_VALIDATED', 'ASSIGNABLE', 'REJECTED']),
     POLICY_VALIDATED: new Set(['ASSIGNABLE', 'REJECTED']),
     ASSIGNABLE: new Set(['ASSIGNED', 'REJECTED']),
-    ASSIGNED: new Set(['REVIEW_PENDING', 'APPROVED', 'REJECTED']),
+    ASSIGNED: new Set(['IN_PROGRESS', 'REVIEW_PENDING', 'APPROVED', 'REJECTED']),
+    IN_PROGRESS: new Set(['COMPLETED', 'REVIEW_PENDING', 'REJECTED']),
+    COMPLETED: new Set(['REVIEW_PENDING', 'APPROVED', 'REJECTED']),
     REVIEW_PENDING: new Set(['APPROVED', 'REJECTED']),
     APPROVED: new Set(),
     REJECTED: new Set(),
@@ -230,9 +232,10 @@ function buildSortObject(sortBy = 'createdAt', sortDir = 'desc') {
 }
 
 function canTransitionTaskState(currentState, nextState) {
-    if (!currentState || !nextState) return false
-    if (currentState === nextState) return true
-    const allowed = ALLOWED_STATE_TRANSITIONS[currentState]
+    const current = currentState || 'DRAFT'
+    if (!nextState) return false
+    if (current === nextState) return true
+    const allowed = ALLOWED_STATE_TRANSITIONS[current]
     return Boolean(allowed && allowed.has(nextState))
 }
 

@@ -4,6 +4,7 @@ const { authenticate, authorizeManager, authorizeEmployee } = require('../middle
 const {
     handleValidationErrors,
     taskIdentifierValidation,
+    taskBodyIdentifierValidation,
     createTaskValidation,
     assignTaskValidation,
     updateTaskValidation,
@@ -162,7 +163,7 @@ router.post(
     '/accept',
     authenticate,
     authorizeEmployee,
-    [taskIdentifierValidation[0]],
+    taskBodyIdentifierValidation,
     handleValidationErrors,
     taskController.acceptTask
 )
@@ -171,7 +172,7 @@ router.post(
     '/reject',
     authenticate,
     authorizeEmployee,
-    [taskIdentifierValidation[0]],
+    taskBodyIdentifierValidation,
     handleValidationErrors,
     taskController.rejectTask
 )
@@ -180,7 +181,7 @@ router.post(
     '/complete',
     authenticate,
     authorizeEmployee,
-    [taskIdentifierValidation[0]],
+    taskBodyIdentifierValidation,
     handleValidationErrors,
     taskController.completeTask
 )

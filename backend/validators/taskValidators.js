@@ -23,6 +23,14 @@ const taskIdentifierValidation = [
     }),
 ]
 
+const taskBodyIdentifierValidation = [
+    body('taskId').custom((value) => {
+        if (TASK_PUBLIC_ID_REGEX.test(String(value))) return true
+        if (mongoose.Types.ObjectId.isValid(value)) return true
+        throw new Error('Task ID must be a Mongo ID or TASK-XXXX format')
+    }),
+]
+
 const taskPublicIdQueryValidation = [
     query('id').optional().matches(TASK_PUBLIC_ID_REGEX).withMessage('id must match TASK-XXXX'),
 ]
@@ -235,6 +243,7 @@ const bulkDistributeValidation = [
 module.exports = {
     handleValidationErrors,
     taskIdentifierValidation,
+    taskBodyIdentifierValidation,
     taskPublicIdQueryValidation,
     createTaskValidation,
     assignTaskValidation,

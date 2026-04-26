@@ -134,7 +134,7 @@ export function useEmployeeDashboard(): UseEmployeeDashboardReturn {
     const onAccept = useCallback(async (taskId: string) => {
         // Optimistic update
         setTasks(prev =>
-            prev.map(t => t._id === taskId ? { ...t, status: 'in-progress' as any } : t)
+            prev.map(t => t._id === taskId ? { ...t, status: 'in-progress' as any, taskState: 'IN_PROGRESS' as any } : t)
         )
         try {
             await acceptTask(taskId)
@@ -160,7 +160,7 @@ export function useEmployeeDashboard(): UseEmployeeDashboardReturn {
 
     const onComplete = useCallback(async (taskId: string) => {
         setTasks(prev =>
-            prev.map(t => t._id === taskId ? { ...t, status: 'completed' as any } : t)
+            prev.map(t => t._id === taskId ? { ...t, status: 'completed' as any, taskState: 'COMPLETED' as any } : t)
         )
         try {
             await completeTask(taskId)

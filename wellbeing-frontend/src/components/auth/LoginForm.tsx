@@ -87,6 +87,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
                     setValidationError('')
                 }}
                 placeholder="Enter your email address"
+                autoComplete="email"
                 required
             />
 
@@ -104,6 +105,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
                             setValidationError('')
                         }}
                         placeholder="Enter your password"
+                        autoComplete="current-password"
                         required
                         className="pr-10"
                     />

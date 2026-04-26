@@ -28,7 +28,7 @@ const getManagerDashboard = async (req, res) => {
         });
         const acceptedTasks = await Task.countDocuments({
             companyId,
-            status: 'accepted',
+            status: { $in: ['accepted', 'in-progress'] },
         });
         const completedTasks = await Task.countDocuments({
             companyId,
@@ -113,10 +113,14 @@ const getEmployeeDashboard = async (req, res) => {
             'fullName email department currentWorkload'
         );
 
+        if (!employee) {
+            return res.status(404).json({ message: 'Employee not found' });
+        }
+
         // 2. Get task statistics
         const myTasks = await Task.find({ assignedTo: employeeId });
         const pendingTasks = myTasks.filter((t) => t.status === 'pending').length;
-        const acceptedTasks = myTasks.filter((t) => t.status === 'accepted').length;
+        const acceptedTasks = myTasks.filter((t) => t.status === 'accepted' || t.status === 'in-progress').length;
         const completedTasks = myTasks.filter((t) => t.status === 'completed').length;
         const rejectedTasks = myTasks.filter((t) => t.status === 'rejected').length;
 
@@ -133,10 +137,10 @@ const getEmployeeDashboard = async (req, res) => {
             .limit(10)
             .select('userId points tasksCompleted rank');
 
-        // 5. Get active tasks (pending + accepted)
+        // 5. Get active tasks (pending + accepted + in-progress)
         const activeTasks = await Task.find({
             assignedTo: employeeId,
-            status: { $in: ['pending', 'accepted'] },
+            status: { $in: ['pending', 'accepted', 'in-progress'] },
         })
             .populate('assignedBy', 'fullName email')
             .sort({ dueDate: 1 });
@@ -169,12 +173,14 @@ const getEmployeeDashboard = async (req, res) => {
                     rank: leaderboard?.rank || 0,
                 },
                 activeTasks,
-                leaderboard: companyLeaderboard.map((entry, index) => ({
-                    rank: index + 1,
-                    name: entry.userId.fullName,
-                    points: entry.points,
-                    tasksCompleted: entry.tasksCompleted,
-                })),
+                leaderboard: companyLeaderboard
+                    .filter(entry => entry.userId) // Ensure userId exists
+                    .map((entry, index) => ({
+                        rank: index + 1,
+                        name: entry.userId.fullName || 'Unknown User',
+                        points: entry.points,
+                        tasksCompleted: entry.tasksCompleted,
+                    })),
             },
         });
     } catch (error) {

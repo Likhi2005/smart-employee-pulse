@@ -9,6 +9,8 @@ export type TaskState =
     | 'POLICY_VALIDATED'
     | 'ASSIGNABLE'
     | 'ASSIGNED'
+    | 'IN_PROGRESS'
+    | 'COMPLETED'
     | 'REVIEW_PENDING'
     | 'APPROVED'
     | 'REJECTED'

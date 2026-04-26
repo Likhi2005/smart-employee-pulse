@@ -61,6 +61,8 @@ const userSchema = new mongoose.Schema(
     { timestamps: true }
 );
 
+userSchema.index({ email: 1, companyId: 1 }, { unique: true });
+
 // Optional virtual so requirement "name" maps to fullName cleanly
 userSchema.virtual('name').get(function () {
     return this.fullName;
