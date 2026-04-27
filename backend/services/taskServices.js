@@ -488,6 +488,14 @@ async function assignTask(payload, { managerId, companyId }) {
         throw error
     }
 
+    // Restriction: Cannot reassign tasks that are in-progress, completed, or approved
+    const RESTRICTED_STATUSES = new Set(['in-progress', 'completed', 'accepted'])
+    if (RESTRICTED_STATUSES.has(task.status) || task.taskState === 'APPROVED') {
+        const error = new Error(`Cannot reassign task in status: ${task.status}`)
+        error.statusCode = 400
+        throw error
+    }
+
     let finalEmployeeId = payload.employeeId || null
     let ranked = null
 

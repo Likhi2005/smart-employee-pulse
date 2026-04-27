@@ -51,7 +51,7 @@ export default function ProjectBreakdownStudio() {
 
   const [isStarted, setIsStarted] = useState(false);
   const [isSimulating, setIsSimulating] = useState(false);
-  const [projectInput, setProjectInput] = useState({ title: '', description: '', effort: '' });
+  const [projectInput, setProjectInput] = useState({ title: '', description: '', effort: '', dueDate: '' });
   
   const [workflowState, setWorkflowState] = useState<WorkflowState>({
     stepStatus: {
@@ -106,7 +106,8 @@ export default function ProjectBreakdownStudio() {
         description: t.description || '',
         effort: t.effort || 2,
         priority: t.priority || 'medium',
-        dependencies: []
+        dependencies: [],
+        dueDate: projectInput.dueDate || undefined
       }));
 
       setWorkflowState(prev => ({ 
@@ -176,7 +177,8 @@ export default function ProjectBreakdownStudio() {
         description: t.description,
         effort: t.effort,
         priority: t.priority,
-        // assignedTo: t.assigneeId
+        dueDate: t.dueDate || projectInput.dueDate,
+        assignedTo: t.assigneeId
       }));
 
       await createBulkTasks(tasksToCreate);
@@ -335,6 +337,10 @@ export default function ProjectBreakdownStudio() {
                         <div>
                           <label className="block text-sm font-medium text-gray-400 mb-2">Effort Estimate (Total Hours)</label>
                           <input type="number" value={projectInput.effort} onChange={e => setProjectInput({...projectInput, effort: e.target.value})} placeholder="e.g. 40" className="w-full bg-[#0A0A0A] border border-gray-800 rounded-xl px-4 py-3.5 text-white focus:ring-2 focus:ring-indigo-500/50 outline-none transition-all" />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-400 mb-2">Project Due Date</label>
+                          <input type="date" value={projectInput.dueDate} onChange={e => setProjectInput({...projectInput, dueDate: e.target.value})} className="w-full bg-[#0A0A0A] border border-gray-800 rounded-xl px-4 py-3.5 text-white focus:ring-2 focus:ring-indigo-500/50 outline-none transition-all" />
                         </div>
                         <div>
                           <label className="block text-sm font-medium text-gray-400 mb-2">Description / Goals</label>

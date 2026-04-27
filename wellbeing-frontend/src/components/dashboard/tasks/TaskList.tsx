@@ -19,6 +19,7 @@ import { Sparkles } from 'lucide-react'
 import {
     distributeBulkTasks,
     assignBulkTasks,
+    deleteTask,
 } from '@/services/taskService'
 
 type SavedViewKey = 'all' | 'high-risk' | 'unassigned' | 'due-soon' | 'completed' | 'awaiting-approval'
@@ -35,7 +36,7 @@ const SAVED_VIEWS: SavedView[] = [
     { key: 'unassigned', label: 'Unassigned', patch: { assignee: 'unassigned', status: 'pending' } },
     { key: 'due-soon', label: 'Due Soon', patch: { sortBy: 'dueDate', sortDir: 'asc' } },
     { key: 'completed', label: 'Completed', patch: { status: 'completed', sortBy: 'updatedAt', sortDir: 'desc' } },
-    { key: 'awaiting-approval', label: 'Awaiting Approval', patch: { status: 'completed', sortBy: 'updatedAt', sortDir: 'desc' } },
+    { key: 'awaiting-approval', label: 'Review Required', patch: { status: 'completed', sortBy: 'updatedAt', sortDir: 'desc' } },
 ]
 
 const initialFilters: TaskListFilters = {
@@ -112,6 +113,7 @@ export function TaskList() {
     const [selectedTaskIdentifier, setSelectedTaskIdentifier] = useState<string | null>(null)
     const [selectedTask, setSelectedTask] = useState<TaskItem | null>(null)
     const [drawerLoading, setDrawerLoading] = useState(false)
+    const [drawerMode, setDrawerMode] = useState<'view' | 'edit'>('view')
 
     const [bulkBusy, setBulkBusy] = useState(false)
     const [bulkMessage, setBulkMessage] = useState('')
@@ -208,8 +210,9 @@ export function TaskList() {
         setBulkMessage('')
     }
 
-    const openTask = async (taskIdentifier: string) => {
+    const openTask = async (taskIdentifier: string, mode: 'view' | 'edit' = 'view') => {
         setSelectedTaskIdentifier(taskIdentifier)
+        setDrawerMode(mode)
         setDrawerLoading(true)
         try {
             const task = await getTaskDetails(taskIdentifier)
@@ -224,6 +227,7 @@ export function TaskList() {
     const closeDrawer = () => {
         setSelectedTaskIdentifier(null)
         setSelectedTask(null)
+        setDrawerMode('view')
     }
 
     const handleApproveTask = async (taskId: string, notes?: string) => {
@@ -245,6 +249,31 @@ export function TaskList() {
             await loadTasks(filters)
         } catch (err: any) {
             setBulkMessage(err?.response?.data?.message || 'Failed to reject task')
+        }
+    }
+
+    const handleDeleteTask = async (taskId: string) => {
+        if (!window.confirm('Are you sure you want to delete this task?')) return
+        try {
+            await deleteTask(taskId)
+            setBulkMessage('Task deleted successfully')
+            await loadTasks(filters)
+        } catch (err: any) {
+            setBulkMessage(err?.response?.data?.message || 'Failed to delete task')
+        }
+    }
+
+    const handleEditTask = (task: TaskItem) => {
+        openTask(task.id || task._id, 'edit')
+    }
+
+    const handleUpdateTask = async (taskId: string, payload: any) => {
+        try {
+            await updateTask(taskId, payload)
+            setBulkMessage('Task updated successfully')
+            await loadTasks(filters)
+        } catch (err: any) {
+            setBulkMessage(err?.response?.data?.message || 'Failed to update task')
         }
     }
 
@@ -416,6 +445,10 @@ export function TaskList() {
                         onToggleAll={toggleAll}
                         onToggleRow={toggleRow}
                         onOpenRow={openTask}
+                        onEditRow={handleEditTask}
+                        onDeleteRow={handleDeleteTask}
+                        onApproveRow={handleApproveTask}
+                        onRejectRow={handleRejectTask}
                         page={filters.page}
                         totalPages={totalPages}
                         totalItems={totalItems}
@@ -436,6 +469,8 @@ export function TaskList() {
                 onClose={closeDrawer}
                 onApprove={handleApproveTask}
                 onReject={handleRejectTask}
+                onUpdate={handleUpdateTask}
+                initialMode={drawerMode}
             />
 
             <BulkAssignmentReviewModal

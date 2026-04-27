@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from 'framer-motion'
 import { Loader2, PanelRightClose, CheckCircle2, XCircle } from 'lucide-react'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import type { TaskItem } from '@/types'
 
 interface TaskDetailsDrawerProps {
@@ -8,8 +8,9 @@ interface TaskDetailsDrawerProps {
     loading: boolean
     task: TaskItem | null
     onClose: () => void
-    onApprove?: (taskId: string, notes?: string) => Promise<void>
     onReject?: (taskId: string, reason?: string) => Promise<void>
+    onUpdate?: (taskId: string, payload: any) => Promise<void>
+    initialMode?: 'view' | 'edit'
 }
 
 function formatDate(date?: string) {
@@ -38,19 +39,60 @@ function DrawerContent({
     onClose,
     onApprove,
     onReject,
+    onUpdate,
+    initialMode,
 }: {
     loading: boolean
     task: TaskItem | null
     onClose: () => void
     onApprove?: (taskId: string, notes?: string) => Promise<void>
     onReject?: (taskId: string, reason?: string) => Promise<void>
+    onUpdate?: (taskId: string, payload: any) => Promise<void>
+    initialMode?: 'view' | 'edit'
 }) {
     const [isApproving, setIsApproving] = useState(false)
     const [isRejecting, setIsRejecting] = useState(false)
+    const [isUpdating, setIsUpdating] = useState(false)
+    const [isEditing, setIsEditing] = useState(initialMode === 'edit')
     const [approvalNotes, setApprovalNotes] = useState('')
     const [rejectionReason, setRejectionReason] = useState('')
-    
+
+    // Form state
+    const [title, setTitle] = useState(task?.title || '')
+    const [description, setDescription] = useState(task?.description || '')
+    const [priority, setPriority] = useState(task?.priority || 'medium')
+    const [effort, setEffort] = useState(String(task?.effort || ''))
+    const [dueDate, setDueDate] = useState(task?.dueDate ? task.dueDate.split('T')[0] : '')
+
     const isAwaitingApproval = task?.status === 'completed' && (task as any)?.taskState === 'REVIEW_PENDING'
+    const isRestricted = ['in-progress', 'completed', 'accepted'].includes(task?.status || '') || (task as any)?.taskState === 'APPROVED'
+
+    useEffect(() => {
+        if (task) {
+            setTitle(task.title)
+            setDescription(task.description || '')
+            setPriority(task.priority)
+            setEffort(String(task.effort))
+            setDueDate(task.dueDate ? task.dueDate.split('T')[0] : '')
+        }
+    }, [task])
+
+    const handleUpdate = async () => {
+        if (!task || !onUpdate) return
+        setIsUpdating(true)
+        try {
+            await onUpdate(task._id, {
+                title,
+                description,
+                priority,
+                effort: Number(effort),
+                dueDate,
+            })
+            setIsEditing(false)
+        } finally {
+            setIsUpdating(false)
+        }
+    }
     
     const handleApprove = async () => {
         if (!task || !onApprove) return
@@ -86,17 +128,36 @@ function DrawerContent({
                 <div>
                     <p className="text-xs uppercase tracking-[0.2em] text-neutral-500">Task Details</p>
                     <h3 className="mt-1 text-lg font-semibold text-neutral-50">
-                        {task?.title || 'Loading...'}
+                        {isEditing ? (
+                            <input
+                                value={title}
+                                onChange={(e) => setTitle(e.target.value)}
+                                className="w-full bg-transparent border-b border-neutral-700 focus:border-amber-500 focus:outline-none"
+                            />
+                        ) : (
+                            task?.title || 'Loading...'
+                        )}
                     </h3>
                     <p className="mt-1 text-xs text-neutral-500">{taskPublicId(task)}</p>
                 </div>
-                <button
-                    type="button"
-                    onClick={onClose}
-                    className="rounded-lg border border-neutral-800 bg-neutral-900 p-2 text-neutral-300 hover:bg-neutral-800"
-                >
-                    <PanelRightClose size={16} />
-                </button>
+                <div className="flex gap-2">
+                    {!isEditing && !isRestricted && (
+                        <button
+                            type="button"
+                            onClick={() => setIsEditing(true)}
+                            className="rounded-lg border border-neutral-800 bg-neutral-900 px-3 py-1 text-xs text-neutral-300 hover:bg-neutral-800"
+                        >
+                            Edit
+                        </button>
+                    )}
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        className="rounded-lg border border-neutral-800 bg-neutral-900 p-2 text-neutral-300 hover:bg-neutral-800"
+                    >
+                        <PanelRightClose size={16} />
+                    </button>
+                </div>
             </div>
 
             <div className="space-y-4 px-4 py-4">
@@ -114,27 +175,89 @@ function DrawerContent({
 
                         <div className="rounded-xl border border-neutral-800 bg-neutral-900/60 p-3 text-sm">
                             <div className="text-neutral-500">Description</div>
-                            <div className="mt-1 text-neutral-200">{task.description || 'No description'}</div>
+                            <div className="mt-1 text-neutral-200">
+                                {isEditing ? (
+                                    <textarea
+                                        value={description}
+                                        onChange={(e) => setDescription(e.target.value)}
+                                        className="w-full bg-transparent border border-neutral-700 rounded-md p-2 focus:border-amber-500 focus:outline-none"
+                                        rows={3}
+                                    />
+                                ) : (
+                                    task.description || 'No description'
+                                )}
+                            </div>
                         </div>
 
                         <div className="rounded-xl border border-neutral-800 bg-neutral-900/60 p-3 text-sm">
                             <div className="text-neutral-500">Task Meta</div>
-                            <div className="mt-2 grid grid-cols-2 gap-2 text-neutral-300">
-                                <div>Priority: {task.priority}</div>
-                                <div>Status: {task.status}</div>
-                                <div>Risk: {task.riskLevel || 'low'}</div>
-                                <div>Effort: {task.effort} hrs</div>
+                            <div className="mt-2 grid grid-cols-2 gap-4 text-neutral-300">
+                                <div>
+                                    <label className="text-xs text-neutral-500 block mb-1">Priority</label>
+                                    {isEditing ? (
+                                        <select
+                                            value={priority}
+                                            onChange={(e) => setPriority(e.target.value as any)}
+                                            className="w-full bg-neutral-800 border border-neutral-700 rounded-md p-1"
+                                        >
+                                            <option value="low">Low</option>
+                                            <option value="medium">Medium</option>
+                                            <option value="high">High</option>
+                                        </select>
+                                    ) : (
+                                        task.priority
+                                    )}
+                                </div>
+                                <div>
+                                    <label className="text-xs text-neutral-500 block mb-1">Status</label>
+                                    <span className="text-neutral-100">{task.status}</span>
+                                </div>
+                                <div>
+                                    <label className="text-xs text-neutral-500 block mb-1">Effort (hrs)</label>
+                                    {isEditing ? (
+                                        <input
+                                            type="number"
+                                            value={effort}
+                                            onChange={(e) => setEffort(e.target.value)}
+                                            className="w-full bg-neutral-800 border border-neutral-700 rounded-md p-1"
+                                        />
+                                    ) : (
+                                        task.effort
+                                    )}
+                                </div>
+                                <div>
+                                    <label className="text-xs text-neutral-500 block mb-1">Due Date</label>
+                                    {isEditing ? (
+                                        <input
+                                            type="date"
+                                            value={dueDate}
+                                            onChange={(e) => setDueDate(e.target.value)}
+                                            className="w-full bg-neutral-800 border border-neutral-700 rounded-md p-1"
+                                        />
+                                    ) : (
+                                        formatDate(task.dueDate)
+                                    )}
+                                </div>
                             </div>
                         </div>
 
-                        <div className="rounded-xl border border-neutral-800 bg-neutral-900/60 p-3 text-sm">
-                            <div className="text-neutral-500">Timeline</div>
-                            <div className="mt-2 space-y-1 text-neutral-300">
-                                <div>Created: {formatDate(task.createdAt)}</div>
-                                <div>Due: {formatDate(task.dueDate)}</div>
-                                <div>Updated: {formatDate(task.updatedAt)}</div>
+                        {isEditing && (
+                            <div className="flex gap-2">
+                                <button
+                                    onClick={handleUpdate}
+                                    disabled={isUpdating}
+                                    className="flex-1 flex items-center justify-center gap-2 rounded-lg bg-amber-500 px-3 py-2 text-xs font-medium text-black hover:bg-amber-600 disabled:opacity-50"
+                                >
+                                    {isUpdating ? <Loader2 size={14} className="animate-spin" /> : 'Save Changes'}
+                                </button>
+                                <button
+                                    onClick={() => setIsEditing(false)}
+                                    className="flex-1 rounded-lg border border-neutral-700 bg-neutral-800 px-3 py-2 text-xs text-neutral-300"
+                                >
+                                    Cancel
+                                </button>
                             </div>
-                        </div>
+                        )}
 
                         {isAwaitingApproval && (
                             <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3">
@@ -228,13 +351,23 @@ export function TaskDetailsDrawer({
     onClose,
     onApprove,
     onReject,
+    onUpdate,
+    initialMode,
 }: TaskDetailsDrawerProps) {
     return (
         <AnimatePresence>
             {open && (
                 <>
                     <div className="hidden min-h-[300px] rounded-2xl border border-neutral-800 bg-neutral-950 xl:sticky xl:top-20 xl:block">
-                        <DrawerContent loading={loading} task={task} onClose={onClose} onApprove={onApprove} onReject={onReject} />
+                        <DrawerContent 
+                            loading={loading} 
+                            task={task} 
+                            onClose={onClose} 
+                            onApprove={onApprove} 
+                            onReject={onReject} 
+                            onUpdate={onUpdate}
+                            initialMode={initialMode}
+                        />
                     </div>
 
                     <motion.div
@@ -252,7 +385,15 @@ export function TaskDetailsDrawer({
                         exit={{ x: 420, opacity: 0 }}
                         transition={{ duration: 0.25 }}
                     >
-                        <DrawerContent loading={loading} task={task} onClose={onClose} onApprove={onApprove} onReject={onReject} />
+                        <DrawerContent 
+                            loading={loading} 
+                            task={task} 
+                            onClose={onClose} 
+                            onApprove={onApprove} 
+                            onReject={onReject} 
+                            onUpdate={onUpdate}
+                            initialMode={initialMode}
+                        />
                     </motion.aside>
                 </>
             )}

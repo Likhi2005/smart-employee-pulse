@@ -125,7 +125,7 @@ export function useEmployeeDashboard(): UseEmployeeDashboardReturn {
     const kanbanColumns: KanbanColumns = {
         pending: tasks.filter(t => t.status === 'pending'),
         inProgress: tasks.filter(t => t.status === 'in-progress'),
-        reviewPending: tasks.filter(t => (t as any).taskState === 'REVIEW_PENDING' || t.status === 'completed'),
+        reviewPending: tasks.filter(t => t.status === 'completed' && (t as any).taskState !== 'APPROVED'),
         done: tasks.filter(t => t.status === 'completed' && (t as any).taskState === 'APPROVED'),
     }
 

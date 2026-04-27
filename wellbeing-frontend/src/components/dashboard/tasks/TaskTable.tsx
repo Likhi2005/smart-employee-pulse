@@ -1,4 +1,4 @@
-import { Eye, Loader2, PencilLine, Trash2, UserPlus } from 'lucide-react'
+import { Eye, Loader2, PencilLine, Trash2, UserPlus, CheckCircle2, AlertCircle } from 'lucide-react'
 import type { TaskItem } from '@/types'
 
 interface TaskTableProps {
@@ -11,6 +11,10 @@ interface TaskTableProps {
     onToggleAll: () => void
     onToggleRow: (taskId: string) => void
     onOpenRow: (taskIdentifier: string) => void
+    onEditRow?: (task: TaskItem) => void
+    onDeleteRow?: (taskId: string) => void
+    onApproveRow?: (taskId: string) => void
+    onRejectRow?: (taskId: string) => void
     page: number
     totalPages: number
     totalItems: number
@@ -66,6 +70,10 @@ export function TaskTable({
     onToggleAll,
     onToggleRow,
     onOpenRow,
+    onEditRow,
+    onDeleteRow,
+    onApproveRow,
+    onRejectRow,
     page,
     totalPages,
     totalItems,
@@ -148,10 +156,9 @@ export function TaskTable({
                             </tr>
                         )}
 
-                        {!loading &&
-                            !error &&
-                            tasks.map((task) => {
+                        {!loading && !error && tasks.map((task) => {
                                 const identifier = task.id || task._id
+                                const isRestricted = ['in-progress', 'completed', 'accepted'].includes(task.status) || (task as any).taskState === 'APPROVED'
                                 return (
                                     <tr
                                         key={task._id}
@@ -226,29 +233,65 @@ export function TaskTable({
                                             <div className="flex items-center gap-0.5 text-neutral-400">
                                                 <button
                                                     type="button"
-                                                    onClick={(e) => e.stopPropagation()}
+                                                    title="View Details"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation()
+                                                        onOpenRow(identifier)
+                                                    }}
                                                     className="rounded p-1.5 hover:bg-neutral-800 hover:text-neutral-100"
                                                 >
                                                     <Eye size={14} />
                                                 </button>
+
+                                                {task.status === 'completed' && (
+                                                    <>
+                                                        <button
+                                                            type="button"
+                                                            title="Approve Task"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation()
+                                                                onApproveRow?.(task._id)
+                                                            }}
+                                                            className="rounded p-1.5 hover:bg-emerald-500/20 hover:text-emerald-400 text-emerald-500/70 transition-colors"
+                                                        >
+                                                            <CheckCircle2 size={14} />
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            title="Reject Task"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation()
+                                                                onRejectRow?.(task._id)
+                                                            }}
+                                                            className="rounded p-1.5 hover:bg-red-500/20 hover:text-red-400 text-red-500/70 transition-colors"
+                                                        >
+                                                            <AlertCircle size={14} />
+                                                        </button>
+                                                    </>
+                                                )}
+
                                                 <button
                                                     type="button"
-                                                    onClick={(e) => e.stopPropagation()}
-                                                    className="rounded p-1.5 hover:bg-neutral-800 hover:text-neutral-100"
+                                                    title={isRestricted ? "Cannot edit active/completed task" : "Edit Task"}
+                                                    disabled={isRestricted}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation()
+                                                        onEditRow?.(task)
+                                                    }}
+                                                    className="rounded p-1.5 hover:bg-neutral-800 hover:text-neutral-100 disabled:opacity-30 disabled:cursor-not-allowed"
                                                 >
                                                     <PencilLine size={14} />
                                                 </button>
+                                                
                                                 <button
                                                     type="button"
-                                                    onClick={(e) => e.stopPropagation()}
-                                                    className="rounded p-1.5 hover:bg-neutral-800 hover:text-neutral-100"
-                                                >
-                                                    <UserPlus size={14} />
-                                                </button>
-                                                <button
-                                                    type="button"
-                                                    onClick={(e) => e.stopPropagation()}
-                                                    className="rounded p-1.5 hover:bg-neutral-800 hover:text-neutral-100"
+                                                    title={isRestricted ? "Cannot delete active/completed task" : "Delete Task"}
+                                                    disabled={isRestricted}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation()
+                                                        onDeleteRow?.(task._id)
+                                                    }}
+                                                    className="rounded p-1.5 hover:bg-red-500/20 hover:text-red-400 disabled:opacity-30 disabled:cursor-not-allowed"
                                                 >
                                                     <Trash2 size={14} />
                                                 </button>
