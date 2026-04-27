@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { X, Mail, Briefcase, Activity, CalendarDays, ShieldCheck } from 'lucide-react'
+import { X, Mail, Briefcase, Activity, CalendarDays, ShieldCheck, Zap } from 'lucide-react'
 import api from '@/services/api'
 
 interface EmployeeDetailsDrawerProps {
@@ -13,6 +13,7 @@ interface EmployeeDetails {
     fullName: string
     email: string
     department?: string
+    skills?: string[]
     currentWorkload?: number
     role?: string
     isActive?: boolean
@@ -146,6 +147,27 @@ export const EmployeeDetailsDrawer: React.FC<EmployeeDetailsDrawerProps> = ({
                                             label="Workload"
                                             value={String(employee.currentWorkload ?? 0)}
                                         />
+                                        
+                                        {employee.skills && employee.skills.length > 0 && (
+                                            <div className="rounded-lg border border-neutral-800 bg-neutral-900/60 px-4 py-3">
+                                                <div className="flex items-start gap-3">
+                                                    <div className="mt-0.5 rounded-md bg-neutral-800 p-2 text-neutral-300">
+                                                        <Zap size={15} />
+                                                    </div>
+                                                    <div className="min-w-0 flex-1">
+                                                        <p className="text-xs uppercase tracking-wide text-neutral-500">Skills</p>
+                                                        <div className="mt-2 flex flex-wrap gap-1.5">
+                                                            {employee.skills.map((skill, idx) => (
+                                                                <span key={idx} className="inline-flex items-center rounded-full bg-amber-500/10 px-2.5 py-1 text-xs font-medium text-amber-400 border border-amber-500/20">
+                                                                    {skill}
+                                                                </span>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
+
                                         <InfoRow
                                             icon={CalendarDays}
                                             label="Created"

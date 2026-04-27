@@ -10,7 +10,7 @@ class EmployeeService {
         return Math.random().toString(36).slice(-10);
     }
 
-    async createEmployee({ companyId, fullName, email, department }) {
+    async createEmployee({ companyId, fullName, email, department, skills = [] }) {
         const exists = await employeeRepository.findByEmailInCompany(email, companyId);
         if (exists) throw new AppError('Email already exists in company', 409);
 
@@ -23,6 +23,7 @@ class EmployeeService {
             role: 'employee',
             companyId,
             department: department || 'Not specified',
+            skills: Array.isArray(skills) ? skills.map(s => String(s).trim()).filter(Boolean) : [],
             isPasswordChanged: false,
             isActive: true,
         });
@@ -69,10 +70,16 @@ class EmployeeService {
         const existing = await employeeRepository.findRawByIdInCompany(employeeId, companyId);
         if (!existing) throw new AppError('Employee not found', 404);
 
-        const allowed = ['fullName', 'department', 'currentWorkload', 'isActive'];
+        const allowed = ['fullName', 'department', 'skills', 'currentWorkload', 'isActive'];
         const safeUpdates = {};
         for (const key of allowed) {
-            if (Object.prototype.hasOwnProperty.call(updates, key)) safeUpdates[key] = updates[key];
+            if (Object.prototype.hasOwnProperty.call(updates, key)) {
+                if (key === 'skills' && Array.isArray(updates[key])) {
+                    safeUpdates[key] = updates[key].map(s => String(s).trim()).filter(Boolean);
+                } else {
+                    safeUpdates[key] = updates[key];
+                }
+            }
         }
 
         const updated = await employeeRepository.updateById(employeeId, safeUpdates);
@@ -122,7 +129,17 @@ class EmployeeService {
             fullName: (record.fullName || '').trim(),
             email: (record.email || '').trim().toLowerCase(),
             department: (record.department || 'Not specified').trim(),
+            skills: [],
         };
+
+        // Parse skills from comma-separated string or array
+        if (record.skills) {
+            const skillsInput = typeof record.skills === 'string' ? record.skills : JSON.stringify(record.skills);
+            clean.skills = skillsInput
+                .split(',')
+                .map(s => String(s).trim())
+                .filter(s => s.length > 0);
+        }
 
         if (!clean.fullName || clean.fullName.length < 2) errors.push('Invalid fullName');
         if (!clean.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(clean.email)) errors.push('Invalid email');
@@ -188,6 +205,7 @@ class EmployeeService {
                     role: 'employee',
                     companyId,
                     department: row.department,
+                    skills: row.skills || [],
                     isPasswordChanged: false,
                     isActive: true,
                 });

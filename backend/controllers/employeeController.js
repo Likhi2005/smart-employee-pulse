@@ -9,6 +9,7 @@ const createEmployee = asyncHandler(async (req, res) => {
         fullName: req.body.fullName,
         email: req.body.email,
         department: req.body.department,
+        skills: req.body.skills,
     });
 
     return success(res, {

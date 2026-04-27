@@ -17,6 +17,7 @@ interface FormData {
     fullName: string
     email: string
     department: string
+    skills: string
 }
 
 interface CreateResponse {
@@ -53,6 +54,7 @@ export const CreateEmployeeForm: React.FC<CreateEmployeeFormProps> = ({
         fullName: '',
         email: '',
         department: 'Not specified',
+        skills: '',
     })
 
     useEffect(() => {
@@ -61,6 +63,7 @@ export const CreateEmployeeForm: React.FC<CreateEmployeeFormProps> = ({
                 fullName: initialData.fullName || '',
                 email: initialData.email || '',
                 department: initialData.department || 'Not specified',
+                skills: (initialData as any).skills?.join(', ') || '',
             })
             setStep('form')
             setError('')
@@ -73,6 +76,7 @@ export const CreateEmployeeForm: React.FC<CreateEmployeeFormProps> = ({
                 fullName: '',
                 email: '',
                 department: 'Not specified',
+                skills: '',
             })
             setStep('form')
             setError('')
@@ -120,6 +124,11 @@ export const CreateEmployeeForm: React.FC<CreateEmployeeFormProps> = ({
 
         setIsLoading(true)
         try {
+            const skillsArray = formData.skills
+                .split(',')
+                .map(s => s.trim())
+                .filter(s => s.length > 0)
+
             if (isEditMode) {
                 if (!employeeId) {
                     setError('Employee id is missing for update')
@@ -129,6 +138,7 @@ export const CreateEmployeeForm: React.FC<CreateEmployeeFormProps> = ({
                 await api.put('/employees/' + employeeId, {
                     fullName: formData.fullName.trim(),
                     department: formData.department,
+                    skills: skillsArray,
                 })
 
                 onSuccess()
@@ -139,6 +149,7 @@ export const CreateEmployeeForm: React.FC<CreateEmployeeFormProps> = ({
                 fullName: formData.fullName.trim(),
                 email: formData.email.trim(),
                 department: formData.department,
+                skills: skillsArray,
             })
 
             const payload = response.data as {
@@ -169,7 +180,7 @@ export const CreateEmployeeForm: React.FC<CreateEmployeeFormProps> = ({
 
     const handleDone = () => {
         setStep('form')
-        setFormData({ fullName: '', email: '', department: 'Not specified' })
+        setFormData({ fullName: '', email: '', department: 'Not specified', skills: '' })
         setTempPassword('')
         onSuccess()
     }
@@ -352,6 +363,21 @@ export const CreateEmployeeForm: React.FC<CreateEmployeeFormProps> = ({
                             </option>
                         ))}
                     </select>
+                </div>
+
+                <div>
+                    <label className="mb-1.5 block text-sm font-medium text-neutral-300">
+                        Skills <span className="text-neutral-500 text-xs font-normal">(comma-separated)</span>
+                    </label>
+                    <input
+                        type="text"
+                        name="skills"
+                        placeholder="e.g. React, Node.js, TypeScript, AWS"
+                        value={formData.skills}
+                        onChange={handleInputChange}
+                        className="w-full rounded-md border border-neutral-700 bg-neutral-800 px-3 py-2 text-sm text-neutral-50 placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-amber-600"
+                    />
+                    <p className="mt-1 text-xs text-neutral-500">Enter multiple skills separated by commas</p>
                 </div>
 
                 <div className="flex items-center justify-end gap-3 border-t border-neutral-800 pt-6">
