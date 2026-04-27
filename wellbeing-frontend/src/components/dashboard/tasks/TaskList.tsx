@@ -5,6 +5,8 @@ import {
     getTeamTasks,
     getEmployeesForAssignment,
     updateTask,
+    approveTask,
+    rejectTask,
     type EmployeeOption,
 } from '@/services/taskService'
 import type { TaskItem, TaskListFilters } from '@/types'
@@ -19,7 +21,7 @@ import {
     assignBulkTasks,
 } from '@/services/taskService'
 
-type SavedViewKey = 'all' | 'high-risk' | 'unassigned' | 'due-soon' | 'completed'
+type SavedViewKey = 'all' | 'high-risk' | 'unassigned' | 'due-soon' | 'completed' | 'awaiting-approval'
 
 interface SavedView {
     key: SavedViewKey
@@ -33,6 +35,7 @@ const SAVED_VIEWS: SavedView[] = [
     { key: 'unassigned', label: 'Unassigned', patch: { assignee: 'unassigned', status: 'pending' } },
     { key: 'due-soon', label: 'Due Soon', patch: { sortBy: 'dueDate', sortDir: 'asc' } },
     { key: 'completed', label: 'Completed', patch: { status: 'completed', sortBy: 'updatedAt', sortDir: 'desc' } },
+    { key: 'awaiting-approval', label: 'Awaiting Approval', patch: { status: 'completed', sortBy: 'updatedAt', sortDir: 'desc' } },
 ]
 
 const initialFilters: TaskListFilters = {
@@ -223,6 +226,28 @@ export function TaskList() {
         setSelectedTask(null)
     }
 
+    const handleApproveTask = async (taskId: string, notes?: string) => {
+        try {
+            await approveTask(taskId, notes)
+            setBulkMessage('Task approved successfully')
+            closeDrawer()
+            await loadTasks(filters)
+        } catch (err: any) {
+            setBulkMessage(err?.response?.data?.message || 'Failed to approve task')
+        }
+    }
+
+    const handleRejectTask = async (taskId: string, reason?: string) => {
+        try {
+            await rejectTask(taskId, reason)
+            setBulkMessage('Task rejected successfully')
+            closeDrawer()
+            await loadTasks(filters)
+        } catch (err: any) {
+            setBulkMessage(err?.response?.data?.message || 'Failed to reject task')
+        }
+    }
+
     const toggleRow = (taskMongoId: string) => {
         setSelectedRows((prev) =>
             prev.includes(taskMongoId) ? prev.filter((id) => id !== taskMongoId) : [...prev, taskMongoId]
@@ -409,6 +434,8 @@ export function TaskList() {
                 loading={drawerLoading}
                 task={selectedTask}
                 onClose={closeDrawer}
+                onApprove={handleApproveTask}
+                onReject={handleRejectTask}
             />
 
             <BulkAssignmentReviewModal

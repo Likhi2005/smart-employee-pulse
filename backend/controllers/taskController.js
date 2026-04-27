@@ -1437,7 +1437,36 @@ const assignBulkTasks = async (req, res) => {
         const managerId = req.user.userId;
         const companyId = req.user.companyId;
 
+        console.log('📝 Assigning bulk tasks:', {
+            count: assignments?.length,
+            managerId,
+            companyId,
+            firstAssignment: assignments?.[0]
+        });
+
+        if (!Array.isArray(assignments) || assignments.length === 0) {
+            return res.status(400).json({
+                message: 'Invalid assignments: must be non-empty array',
+                error: 'INVALID_ASSIGNMENTS'
+            });
+        }
+
+        // Validate each assignment
+        const invalidAssignments = assignments.filter(a => !a.taskId || !a.employeeId);
+        if (invalidAssignments.length > 0) {
+            console.warn('⚠️ Invalid assignments found:', invalidAssignments);
+            return res.status(400).json({
+                message: `${invalidAssignments.length} assignments have missing taskId or employeeId`,
+                error: 'MISSING_FIELDS',
+                invalid: invalidAssignments
+            });
+        }
+
         const assignedTasks = await taskServices.assignBulkTasks(assignments, { managerId, companyId });
+
+        console.log('✅ Bulk tasks assigned successfully:', {
+            count: assignedTasks.length
+        });
 
         res.json({
             message: 'Bulk tasks assigned successfully',
@@ -1445,9 +1474,16 @@ const assignBulkTasks = async (req, res) => {
             tasks: assignedTasks,
         });
     } catch (error) {
-        console.error('Assign bulk tasks error:', error);
-        res.status(400).json({
-            message: 'Failed to assign bulk tasks',
+        console.error('❌ Assign bulk tasks error:', {
+            message: error.message,
+            statusCode: error.statusCode,
+            stack: error.stack
+        });
+        
+        // Return the statusCode from the error if available, otherwise 400
+        const statusCode = error.statusCode || 400;
+        res.status(statusCode).json({
+            message: error.message || 'Failed to assign bulk tasks',
             error: error.message,
         });
     }

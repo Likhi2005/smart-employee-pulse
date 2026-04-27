@@ -907,17 +907,51 @@ async function createBulkTasks(tasksPayload, { managerId, companyId }) {
 
 async function assignBulkTasks(assignmentsPayload, { managerId, companyId }) {
     const assignedTasks = []
-    for (const assignment of assignmentsPayload) {
-        const result = await assignTask(
-            {
+    const errors = []
+    
+    for (let i = 0; i < assignmentsPayload.length; i++) {
+        const assignment = assignmentsPayload[i]
+        try {
+            console.log(`📌 Processing assignment ${i + 1}/${assignmentsPayload.length}:`, {
+                taskId: assignment.taskId,
+                employeeId: assignment.employeeId
+            })
+            
+            const result = await assignTask(
+                {
+                    taskId: assignment.taskId,
+                    employeeId: assignment.employeeId,
+                    assignmentMode: 'manual'
+                },
+                { managerId, companyId }
+            )
+            assignedTasks.push(result)
+            console.log(`✅ Assignment ${i + 1} succeeded`)
+        } catch (err) {
+            console.error(`❌ Assignment ${i + 1} failed:`, {
                 taskId: assignment.taskId,
                 employeeId: assignment.employeeId,
-                assignmentMode: 'manual'
-            },
-            { managerId, companyId }
-        )
-        assignedTasks.push(result)
+                error: err.message
+            })
+            errors.push({
+                index: i,
+                taskId: assignment.taskId,
+                employeeId: assignment.employeeId,
+                error: err.message
+            })
+        }
     }
+
+    if (errors.length > 0 && assignedTasks.length === 0) {
+        const err = new Error(`All ${errors.length} assignments failed. First error: ${errors[0].error}`)
+        err.statusCode = 400
+        throw err
+    }
+
+    if (errors.length > 0) {
+        console.warn(`⚠️ Partial failure: ${assignedTasks.length} succeeded, ${errors.length} failed`)
+    }
+
     return assignedTasks
 }
 

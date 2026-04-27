@@ -66,6 +66,7 @@ export default function TaskAssignmentStudio() {
   const [isRunning, setIsRunning] = useState(false);
   const [isApproved, setIsApproved] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
 
   const [strategy, setStrategy] = useState<'balanced' | 'fastest' | 'skill'>('balanced');
   const [constraints, setConstraints] = useState({
@@ -177,16 +178,29 @@ export default function TaskAssignmentStudio() {
   const handleApprove = async () => {
     if (Object.keys(assignments).length === 0) return;
     setIsSaving(true);
+    setErrorMsg('');
     try {
       const payload = Object.entries(assignments).map(([taskId, employeeId]) => ({
         taskId,
         employeeId
       }));
+
+      // Validate payload
+      const invalid = payload.filter(p => !p.taskId || !p.employeeId);
+      if (invalid.length > 0) {
+        setErrorMsg(`Invalid assignments: ${invalid.length} have missing taskId or employeeId`);
+        setIsSaving(false);
+        return;
+      }
+
+      console.log('📤 Sending bulk assign payload:', JSON.stringify(payload, null, 2));
       await assignBulkTasks(payload);
       setIsApproved(true);
       setTimeout(() => navigate('/dashboard/manager/tasks'), 2000);
-    } catch (err) {
-      console.error('Failed to save assignments:', err);
+    } catch (err: any) {
+      console.error('❌ Failed to save assignments:', err);
+      const errorMessage = err?.response?.data?.message || err?.response?.data?.error || err.message || 'Failed to save assignments';
+      setErrorMsg(`Assignment failed: ${errorMessage}`);
     } finally {
       setIsSaving(false);
     }
@@ -812,6 +826,12 @@ export default function TaskAssignmentStudio() {
                </div>
              )}
           </div>
+
+          {errorMsg && (
+            <div className="rounded-lg bg-red-500/15 border border-red-500/30 p-3 text-sm text-red-300">
+              {errorMsg}
+            </div>
+          )}
 
           <div className="flex gap-4">
             <button 

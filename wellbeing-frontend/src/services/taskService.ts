@@ -351,3 +351,13 @@ export async function aiDistributeTasks(tasks: Array<{ title: string; effort: nu
         policyWarnings: string[]
     }>
 }
+
+export async function approveTask(taskId: string, notes?: string) {
+    const response = await api.post(`/tasks/${taskId}/approve`, { notes: notes || '' })
+    return response.data?.task
+}
+
+export async function rejectTask(taskId: string, reason?: string) {
+    const response = await api.post('/tasks/reject', { taskId, reason: reason || '' })
+    return response.data?.task
+}
