@@ -306,39 +306,89 @@ Respond ONLY with valid JSON, no markdown, no extra text:
 // ============================================================
 // 5. AI-POWERED BULK DISTRIBUTION (Policy-Aware)
 // ============================================================
+const extractSkillKeywords = (text) => {
+    const skillMap = {
+        backend: ['backend', 'nodejs', 'node.js', 'express', 'api', 'database', 'sql', 'mongodb', 'server', 'spring', 'java'],
+        frontend: ['frontend', 'react', 'vue', 'angular', 'typescript', 'html', 'css', 'javascript', 'ui', 'component', 'tsx', 'jsx'],
+        design: ['design', 'ui', 'ux', 'figma', 'sketch', 'wireframe', 'mockup', 'visual', 'layout', 'branding'],
+        devops: ['devops', 'docker', 'kubernetes', 'terraform', 'aws', 'ci/cd', 'jenkins', 'deployment', 'infrastructure'],
+        fullstack: ['fullstack', 'full-stack', 'end-to-end'],
+    };
+
+    const lowerText = text.toLowerCase();
+    const foundSkills = [];
+
+    for (const [category, keywords] of Object.entries(skillMap)) {
+        if (keywords.some(kw => lowerText.includes(kw))) {
+            foundSkills.push(category);
+        }
+    }
+
+    return foundSkills.length > 0 ? foundSkills : ['general'];
+};
+
 const aiDistributeTasks = async (tasks, employees, companyPolicyContext) => {
     try {
         const ai = initializeAI();
 
-        const taskList = tasks.map((t, i) => `${i + 1}. "${t.title}" (effort: ${t.effort}h, priority: ${t.priority})`).join('\n');
-        const empList = employees.map(e => `- ${e.fullName} | Workload: ${e.currentWorkload}% | Skills: ${(e.skills || []).join(', ') || 'General'}`).join('\n');
+        // Extract skill requirements from task descriptions
+        const taskList = tasks.map((t, i) => {
+            const skillKeywords = extractSkillKeywords(t.title + ' ' + (t.description || ''));
+            return `${i + 1}. "${t.title}" (effort: ${t.effort}h, priority: ${t.priority}, required skills: ${skillKeywords.join(', ')})`;
+        }).join('\n');
+
+        // Show employee skills clearly - mark NO_SKILLS for empty arrays
+        const empList = employees.map(e => {
+            const skillsStr = (e.skills && e.skills.length > 0) 
+                ? e.skills.join(', ') 
+                : 'NO_SKILLS';
+            return `- ${e.fullName} (${e.department}) | Workload: ${e.currentWorkload}h | Skills: ${skillsStr}`;
+        }).join('\n');
 
         const prompt = `
-You are a smart task distribution engine for a team management platform.
+You are an expert task distribution engine. Your PRIMARY goal is SKILL MATCHING.
 
-Team members and their current state:
+Team members and their expertise:
 ${empList}
 
-Tasks to distribute:
+Tasks to distribute (with required skills):
 ${taskList}
 
-Rules:
-1. Balance workload — do not assign more than 2 tasks to the same person if others are available
-2. Match skills where possible
-3. Higher priority tasks go to lower-workload people
-4. Each task must be assigned to exactly one person
+**MANDATORY SKILL MATCHING RULES:**
+1. **SKILL MATCH IS CRITICAL** - Never assign a backend task to someone with NO_SKILLS or design skills
+2. Assign tasks ONLY to people who have matching skills:
+   - Backend/API tasks → Only to people with backend, nodejs, express, java skills
+   - Frontend/UI tasks → Only to people with frontend, react, typescript, html/css skills
+   - Design tasks → Only to people with design, ui, ux, figma skills
+   - DevOps tasks → Only to people with devops, docker, kubernetes skills
+3. If NO matching skills available, assign to lowest workload person as fallback
+4. Balance workload ONLY among people with matching skills
+5. Higher priority tasks go to people with lower workload (among skill matches)
+6. Do NOT assign to "NO_SKILLS" unless it's a general admin task
+7. Each task assigned to exactly one person
+
+EXAMPLES OF CORRECT MATCHING:
+✓ "Update API Endpoints" (requires backend) → Assign to backend developer only
+✓ "Design UI Mockups" (requires design) → Assign to designer only
+✗ "Update API Endpoints" → DO NOT assign to Designer with NO_SKILLS
+✗ "Design UI Mockups" → DO NOT assign to Backend developer
 
 Respond ONLY with valid JSON, no markdown:
 {
   "assignments": [
     {
       "taskTitle": "exact task title",
-      "assigneeName": "exact employee fullName",
-      "reason": "1-sentence explanation referencing workload or skill"
+      "assigneeName": "exact employee fullName from the list",
+      "reason": "Why assigned based on skill match and workload"
     }
   ]
 }
 `;
+
+        console.log('\n🔍 === AI DISTRIBUTION DEBUG ===');
+        console.log('📋 Employees:', empList);
+        console.log('📋 Tasks:', taskList);
+        console.log('🤖 Prompt sent to AI:', prompt.substring(0, 300) + '...\n');
 
         let response;
         if (ai.provider === 'gemini') {
@@ -348,19 +398,25 @@ Respond ONLY with valid JSON, no markdown:
             const result = await ai.client.chat.completions.create({
                 messages: [{ role: 'user', content: prompt }],
                 model: 'llama-3.3-70b-versatile',
-                temperature: 0.5,
-                max_tokens: 1200,
+                temperature: 0.2,  // ← CRITICAL: Lower temperature for consistent skill matching
+                max_tokens: 1500,
             });
             response = result.choices[0].message.content;
         }
+
+        console.log('✅ AI Raw Response:', response);
 
         const cleaned = response.replace(/```(?:json)?/gi, '').replace(/```/g, '').trim();
         const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
         if (!jsonMatch) throw new Error('Failed to parse AI distribution response');
 
-        return JSON.parse(jsonMatch[0]);
+        const parsed = JSON.parse(jsonMatch[0]);
+        console.log('📋 Parsed Assignments:', JSON.stringify(parsed, null, 2));
+        console.log('=== END DEBUG ===\n');
+        
+        return parsed;
     } catch (error) {
-        console.error('AI distribution error:', error);
+        console.error('❌ AI distribution error:', error);
         throw new Error(`AI distribution failed: ${error.message}`);
     }
 };
