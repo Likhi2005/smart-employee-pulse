@@ -1,260 +1,157 @@
-# 🧠 Smart Employee Pulse - AI-Powered Well-Being Monitoring System
+# 🧠 Smart Employee Pulse - AI-Powered Decision Intelligence & Well-Being System
 
-> An intelligent platform designed to monitor, track, and enhance employee mental health and well-being in the workplace.
+> A FAANG-level enterprise platform designed to monitor, track, and enhance employee well-being through AI-driven task orchestration and predictive decision intelligence.
 
-![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)
-![Status](https://img.shields.io/badge/status-In%20Development-yellow.svg)
-![Team](https://img.shields.io/badge/team-7%20members-brightgreen.svg)
+![Version](https://img.shields.io/badge/version-2.0.0-blue.svg)
+![Status](https://img.shields.io/badge/status-Live%20Development-brightgreen.svg)
+![AI-Powered](https://img.shields.io/badge/AI-Gemini%20|%20Groq-purple.svg)
 
 ---
 
 ## 📋 Table of Contents
 
 - [Project Overview](#project-overview)
-- [Key Features](#key-features)
+- [Key Modules](#key-modules)
 - [Technology Stack](#technology-stack)
-- [Project Structure](#project-structure)
+- [Architecture](#architecture)
 - [Weekly Status Updates](#weekly-status-updates)
-- [Team Members](#team-members)
 - [Getting Started](#getting-started)
-- [Roadmap](#roadmap)
+- [Current Roadmap](#roadmap)
 
 ---
 
 ## 🎯 Project Overview
 
-**Smart Employee Pulse** is an AI-based employee well-being monitoring system that helps organizations:
+**Smart Employee Pulse** has evolved from a simple wellness tracker into a comprehensive **AI-Driven Human Capital Management (HCM) System**. It leverages Large Language Models (LLMs) to bridge the gap between employee well-being and project execution.
 
-- **Track Employee Well-being**: Daily mood, stress, and workload monitoring
-- **Provide Support**: 24/7 AI chatbot for mental health support
-- **Stress Relief**: Interactive games and meditation exercises
-- **Analytics**: Comprehensive dashboards for managers and admins
-- **Personalized Reports**: Weekly insights and recommendations
-- **Preventive Care**: Early detection of burnout and stress signals
-
-### Problem Statement
-Many organizations struggle to understand and support their employees' mental health. Burnout, stress, and declining well-being lead to reduced productivity and high turnover. Smart Employee Pulse provides real-time insights to create a healthier workplace culture.
-
-### Solution
-A comprehensive web platform that:
-- Employees submit daily mood/stress data
-- Managers monitor team well-being
-- AI provides instant support and relaxation exercises
-- Admins track organization-wide metrics
-- Data-driven insights for HR interventions
+### Key Pillars
+- **Predictive Well-being**: Detecting burnout before it happens via daily sentiment analysis.
+- **AI Orchestration**: Automated project breakdown and intelligent task distribution.
+- **Decision Intelligence**: AI-backed conflict resolution and workload balancing for managers.
 
 ---
 
-## ✨ Key Features
+## 🏗️ Key Modules
 
-### For Employees
-- ✅ **Daily Check-in Survey** - 1-minute wellness survey (auto-opens on login)
-- ✅ **Mood & Stress Tracking** - Visual mood, stress, happiness, and workload metrics
-- ✅ **AI Chatbot Support** - 24/7 conversational AI for mental health support
-- ✅ **Stress Relief Games** - Breathing exercises, memory games, meditation
-- ✅ **Weekly Reports** - Comprehensive wellness trends and recommendations
-- ✅ **Task Manager** - Track daily tasks with priority levels
-- ✅ **Profile & Settings** - Personal dashboard and preferences
-- ✅ **Notifications** - Alerts for wellness insights and updates
+### 1. Employee Command Center
+*   **Hero Decision Band**: Actionable insights delivered in < 5 seconds.
+*   **Kanban Board**: Drag-and-drop task lifecycle management (Pending, In-progress, Completed).
+*   **Daily Insights**: Personal performance and wellness analytics.
+*   **Task Calendar**: Visual schedule for deadline tracking and workload planning.
+*   **Wellness Pipeline**: Daily sentiment surveys and mood tracking.
 
-### For Managers
-- ✅ **Team Dashboard** - Real-time stress and mood overview
-- ✅ **Employee Analytics** - Department-level insights and trends
-- ✅ **Burnout Alerts** - Critical stress level notifications
-- ✅ **Performance Tracking** - Weekly team well-being reports
-- ✅ **Custom Reports** - Generate insights for specific teams/periods
-- ✅ **Task Assignment** - Assign and track employee tasks
+### 2. Manager Command Center
+*   **AI Task Manager**: Automated task generation, prioritization, and tracking.
+*   **Policy & Rule Engine**: Hybrid deterministic and AI-driven policy validation for team operations.
+*   **Task Templates**: Standardized reusable project scaffolding.
+*   **Individual Analytics**: Deep-dive insights into each user's performance and wellness trends.
+*   **Activity History**: Comprehensive audit logs and task evolution history.
+*   **Workload Status**: Granular analytics and capacity heatmaps.
 
-### For Admins
-- ✅ **System Analytics** - Organization-wide well-being metrics
-- ✅ **User Management** - Add, edit, remove employees and managers
-- ✅ **Reports** - Export comprehensive wellness data
-- ✅ **Settings** - Configure system preferences
-- ✅ **Audit Logs** - Track system activities
-
-### General Features
-- 🎨 **Modern Dark Theme UI** - Professional, calm aesthetic
-- 📱 **Fully Responsive** - Works on desktop, tablet, and mobile
-- 🔐 **Secure Authentication** - Login/Register with validation
-- ⚡ **Real-time Updates** - Live data synchronization
-- 📊 **Interactive Charts** - Recharts for data visualization
-- 🤖 **AI Assistant** - Mock chatbot with intelligent responses
-- 🎮 **Gamification** - Stress relief games and exercises
-- 🎯 **Progress Tracking** - Visual progress indicators
+### 3. AI Decision Center (Automation Studio)
+*   **Priority Actions**: AI-detected bottlenecks (Workload, Deadline, Skill gaps).
+*   **Smart Project Breakdown**: Auto-scaffolding of projects into structured task trees.
+*   **Task Assignment Engine**: AI-driven workload balancing and skill-based matching.
+*   **Simulation Studio**: Predictive impact analysis of management decisions.
 
 ---
 
-## 🛠 Technology Stack
+## 🛠️ Technology Stack
 
 ### Frontend
-- **React 19** - UI library with hooks and latest features
-- **Vite** - Lightning-fast build tool
-- **Tailwind CSS** - Utility-first styling
-- **React Router DOM** - Client-side routing
-- **Recharts** - React charting library
-- **Lucide React** - Beautiful icon library
-- **Axios** - HTTP client (for future API integration)
+- **React 19 / Vite** - High-performance UI framework.
+- **Tailwind CSS** - Custom design system with glassmorphism and dark mode.
+- **Framer Motion** - Premium micro-interactions and transitions.
+- **Recharts** - Data visualization and heatmaps.
+- **React Router 6** - Robust navigation and state-persistent routing.
 
-### Architecture
-- **Context API** - State management
-- **Mock Data** - Realistic dummy data for development
-- **Custom Hooks** - Reusable logic
-- **Component-Based** - Modular, scalable structure
-
-### Deployment
-- **Vercel** - Optimized for Vite + React
-- **Git** - Version control
-- **GitHub** - Repository hosting
-
+### Backend & AI
+- **Node.js / Express** - Scalable service layer.
+- **MongoDB / Mongoose** - Document-based data orchestration.
+- **Groq / Gemini 1.5** - Multi-model AI provider for intelligent features.
+- **JWT / Bcrypt** - Secure enterprise-grade authentication.
 
 ---
 
 ## 📊 Weekly Status Updates
 
-### Overview
-This section tracks project progress, completed tasks, and blockers on a weekly basis. Team members rotate responsibilities to ensure knowledge sharing and balanced workload.
----
+### **WEEK 1: Documentation Phase**
+| # | Name | Role | Responsibility |
+|---|------|------|-----------------|
+| 1 | **Likhith S** | Team Leader | PRS Documentation |
+| 2 | **Yaswan** | Marketing | Ppt Document |
+| 3 | **Kushal** | Custmer Contact Lead | Project Analysis |
+| 4 | **Tharun** | Testing | Problem statement Documentation |
+| 5 | **Sulthan** | UI/UX | PRS Documentation |
+| 6 | **Sumanth** | Developer | Project Requirements |
 
-## 👥 Team Members
-
-### Core Development Team (6 Members)
-
-##### Team Lead: Likhith S Gowda
-
-#### **WEEK 1: Documentation Phase**
-| # | Name | Role | Responsibility | Contact |
-|---|------|------|-----------------|---------|
-| 1 | **Likhith S** | Team Leader | PRS Documentation | |
-| 2 | **Yaswan** | Marketing | Ppt Document | |
-| 3 | **Kushal** | Custmer Contact Lead | Project Analysis | |
-| 4 | **Tharun** | Testing | Problem statement Documentation | |
-| 5 | **Sulthan** | UI/UX | PRS Documentation | |
-| 6 | **Sumanth** | Developer | Project Requirements | |
-
-#### **WEEK 2: Development & Marketing Phase**
-| # | Name | Role | Responsibility | Contact |
-|---|------|------|-----------------|---------|
-| 1 | **Likhith S** | Team Leader | Employee Dashboard | |
-| 2 | **Yaswan** | Marketing | Customer Reaching | |
-| 3 | **Kushal** | Custmer Contact Lead | Marketing(Survey through Online) | |
-| 4 | **Tharun** | Testing | Customer Reaching | |
-| 5 | **Sulthan** | UI/UX | UI development | |
-| 6 | **Sumanth** | Developer | Integration, data flow | |
+### **WEEK 2: Development Foundation**
+| # | Name | Role | Responsibility |
+|---|------|------|-----------------|
+| 1 | **Likhith S** | Team Leader | Employee Dashboard |
+| 2 | **Yaswan** | Marketing | Customer Reaching |
+| 3 | **Kushal** | Custmer Contact Lead | Marketing(Survey) |
+| 4 | **Tharun** | Testing | Customer Reaching |
+| 5 | **Sulthan** | UI/UX | UI development |
+| 6 | **Sumanth** | Developer | Integration, data flow |
 
 ---
 
-# ------ Upcoming Weeks -------
-### **WEEK 3: Documentation & Foundation (Mar 18 - Mar 24, 2024)**
+### **WEEK 3: Core Infrastructure (Completed)**
+*   ✅ **Enterprise Architecture**: Setup React 19 + Vite + Tailwind CSS design tokens.
+*   ✅ **Auth Security**: Implementation of JWT-based authentication and secure routing.
+*   ✅ **Component Library**: Development of 15+ reusable enterprise-grade UI components.
+*   ✅ **State Management**: Context-based global state for user sessions and themes.
 
-**Status:** ✅ **COMPLETED**
+### **WEEK 4: Employee Command Center (Completed)**
+*   ✅ **Dashboard Hero**: Implementation of the primary employee interface.
+*   ✅ **Wellness Survey**: Intelligent survey modal with session-persistence.
+*   ✅ **Task Pipeline**: Kanban and List views for employee task management.
+*   ✅ **Real-time Metrics**: Integration of Recharts for wellness trend visualization.
 
-#### Tasks Completed
-- [x] Project documentation and requirements
-- [x] Technology stack selection and setup
-- [x] Folder structure and architecture design
-- [x] Tailwind CSS configuration
-- [x] AuthContext and routing setup
-- [x] Component library creation (Button, Card, Input, etc.)
-- [x] Mock data files setup
-- [x] Login and Register page design
+### **WEEK 5: Full Stack & AI Integration (Completed)**
+*   ✅ **Backend API**: Deployment of Express server with MongoDB integration.
+*   ✅ **AI Service Layer**: Implementation of multi-model support (Gemini & Groq).
+*   ✅ **Automation Engine**: AI-powered task priority detection and project breakdown.
+*   ✅ **Data Sync**: Migration from mock data to real-time database orchestration.
 
-#### Metrics
-- **Tasks Completed:** 8/8 ✅
-- **Documentation Coverage:** 100%
-- **Component Library:** 7 components ready
-- **Mock Data Files:** 7 files created
-
-#### Team Assignments - WEEK 3
-
-| Member # | Name | Role | Tasks | Status |
-|----------|------|------|-------|--------|
-| 1 | **___ Name 1** | Project Lead | Project setup, Architecture design | ✅ |
-| 2 | **___ Name 2** | Frontend Lead | Folder structure, Component library | ✅ |
-| 3 | **___ Name 3** | Full Stack | Routing setup, Auth context | ✅ |
-| 4 | **___ Name 4** | Documentation | Technical documentation | ✅ |
-| 5 | **___ Name 5** | Tailwind Specialist | Styling setup, Tailwind config | ✅ |
-| 6 | **___ Name 6** | Data Architect | Mock data structure, Schema design | ✅ |
-| 7 | **___ Name 7** | QA/Testing | Initial testing, Bug tracking | ✅ |
-
-#### Highlights
-- ✨ Professional folder structure created
-- ✨ Dark and light theme support configured
-- ✨ Comprehensive mock data system initialized
-- ✨ Clean component architecture established
-
-#### Blockers/Challenges
-- None - on schedule
-
-#### Next Week Preview
-- Employee dashboard development
-- Auto-opening survey implementation
-- Chatbot page creation
-- Manager dashboard foundation
+### **WEEK 6: Manager Dashboard & Decision Intelligence (In Progress)**
+*   🚀 **AI Decision Center**: Real-time conflict detection and AI-suggested resolutions.
+*   🚀 **Workload Analytics**: Advanced heatmap and trend analysis for team management.
+*   🚀 **Assignment Studio**: AI-driven task allocation and skill-matching engine.
+*   🚀 **System Hardening**: Removal of placeholders and final data-wiring of all dashboards.
 
 ---
 
-### **WEEK 4: Customer & Marketing Development (Mar 25 - Mar 31, 2024)**
+## 🚀 Getting Started
 
-**Status:** 🚀 **IN PROGRESS**
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/Likhi2005/smart-employee-pulse.git
+   ```
 
-#### Tasks Completed
-- [x] Employee Dashboard page (dark theme)
-- [x] Daily Check-in Survey modal
-- [x] Mock survey data integration
-- [x] Dashboard metric cards
-- [x] Quick action buttons
-- [x] Weekly mood trends visualization
-- [x] Task list display
-- [x] AI Assistant feature showcase
+2. **Backend Setup**
+   ```bash
+   cd backend
+   npm install
+   # Configure .env with MONGODB_URI, GROQ_API_KEY, JWT_SECRET
+   npm start
+   ```
 
-#### Task Distribution - WEEK 4
+3. **Frontend Setup**
+   ```bash
+   cd wellbeing-frontend
+   npm install
+   npm run dev
+   ```
 
-| Member # | Name | Department | Tasks | Progress |
-|----------|------|------------|-------|----------|
-| 1 | **___ Name 1** | Product/Customer | Customer feedback collection, User interviews | 75% 📋 |
-| 2 | **___ Name 2** | Marketing | Marketing strategy, Social media plan | 60% 📱 |
-| 3 | **___ Name 3** | Marketing | Content creation, Case studies | 50% ✍️ |
-| 4 | **___ Name 4** | Development | Survey modal, Auto-open feature | ✅ 100% |
-| 5 | **___ Name 5** | Development | Dashboard components, Styling | ✅ 100% |
-| 6 | **___ Name 6** | Development | Mock data integration, Animations | 85% 🎨 |
-| 7 | **___ Name 7** | QA/Support | Testing dashboard, Bug fixes | 70% 🧪 |
+---
 
-#### Completed Features This Week
-- ✅ Employee Dashboard (fully styled)
-- ✅ Daily Survey Modal with 4 questions
-- ✅ Survey auto-open on login
-- ✅ Dark theme implementation
-- ✅ Responsive mobile design
-- ✅ Weekly trends visualization
+## 🛣️ Roadmap (Upcoming)
+- [ ] **Advanced Wellness Prediction**: Machine Learning models for burnout risk scoring.
+- [ ] **Multi-Department Scoping**: Tenant-based separation for large organizations.
+- [ ] **AI Meeting Summarizer**: Integration of meeting notes into task breakdowns.
+- [ ] **Mobile Native App**: React Native expansion for well-being on the go.
 
-#### Current Progress
-- **Development:** 85% 🟠
-- **Marketing:** 55% 🟠
-- **Customer Relations:** 65% 🟠
-- **Overall:** 68% 🟠
-
-#### Metrics
-- **Pages Built:** 1 (Employee Dashboard)
-- **Components Created:** 1 (DailyCheckInModal)
-- **Features Implemented:** 6
-- **Responsive Breakpoints:** Mobile, Tablet, Desktop
-
-#### Known Issues
-- [ ] Survey can open multiple times (fixed with localStorage)
-- [ ] Mobile hamburger menu needed for navigation
-
-#### Upcoming (This Week)
-- [ ] Finalize customer discovery interviews
-- [ ] Complete marketing strategy document
-- [ ] Create product positioning statement
-- [ ] Build Chatbot page with mock messages
-- [ ] Implement Games/Stress Relief section
-- [ ] Start Weekly Reports with Recharts
-
-#### Next Week (Week 3) Preview
-- Manager Dashboard implementation
-- Advanced charting with Recharts
-- Full feature testing and QA
-- Customer beta testing setup
-- Marketing launch preparation
-
+---
+© 2024 Smart Employee Pulse Team. All rights reserved.
