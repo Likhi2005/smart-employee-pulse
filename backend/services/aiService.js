@@ -6,7 +6,7 @@ const Leaderboard = require('../models/Leaderboard');
 
 // Initialize AI clients
 const initializeAI = () => {
-    const aiProvider = process.env.AI_PROVIDER || 'gemini'; // 'gemini' or 'groq'
+    const aiProvider = process.env.AI_PROVIDER; // 'gemini' or 'groq'
 
     if (aiProvider === 'gemini' && process.env.GEMINI_API_KEY) {
         const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
@@ -57,7 +57,7 @@ Respond ONLY with JSON:
         } else if (ai.provider === 'groq') {
             const result = await ai.client.chat.completions.create({
                 messages: [{ role: 'user', content: prompt }],
-                model: 'mixtral-8x7b-32768',
+                model: 'llama-3.3-70b-versatile',
                 temperature: 0.7,
                 max_tokens: 300,
             });
@@ -184,7 +184,7 @@ Respond ONLY with JSON:
         } else if (ai.provider === 'groq') {
             const result = await ai.client.chat.completions.create({
                 messages: [{ role: 'user', content: prompt }],
-                model: 'mixtral-8x7b-32768',
+                model: 'llama-3.3-70b-versatile',
                 temperature: 0.7,
                 max_tokens: 500,
             });
@@ -270,7 +270,7 @@ Respond ONLY with valid JSON, no markdown, no extra text:
         } else if (ai.provider === 'groq') {
             const result = await ai.client.chat.completions.create({
                 messages: [{ role: 'user', content: prompt }],
-                model: 'mixtral-8x7b-32768',
+                model: 'llama-3.3-70b-versatile',
                 temperature: 0.7,
                 max_tokens: 800,
             });
@@ -347,7 +347,7 @@ Respond ONLY with valid JSON, no markdown:
         } else if (ai.provider === 'groq') {
             const result = await ai.client.chat.completions.create({
                 messages: [{ role: 'user', content: prompt }],
-                model: 'mixtral-8x7b-32768',
+                model: 'llama-3.3-70b-versatile',
                 temperature: 0.5,
                 max_tokens: 1200,
             });
@@ -425,7 +425,7 @@ Respond ONLY with JSON:
         } else if (ai.provider === 'groq') {
             const result = await ai.client.chat.completions.create({
                 messages: [{ role: 'user', content: prompt }],
-                model: 'mixtral-8x7b-32768',
+                model: 'llama-3.3-70b-versatile',
                 temperature: 0.7,
                 max_tokens: 800,
             });

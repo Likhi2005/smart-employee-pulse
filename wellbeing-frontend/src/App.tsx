@@ -11,6 +11,7 @@ import { LoginPage } from '@/pages/LoginPage'
 import { RegisterPage } from '@/pages/RegisterPage'
 import { LandingPage } from '@/pages/LandingPage'
 import ManagerDashboardPage from '@/pages/ManagerDashboardPage'
+import ProjectBreakdownStudio from '@/pages/manager/ProjectBreakdownStudio'
 import { EmployeeLayout } from '@/components/layouts/EmployeeLayout'
 import { useAuth } from '@/hooks/useAuth'
 
@@ -43,6 +44,14 @@ const App: React.FC = () => {
           <Route path="/register" element={<RegisterPage />} />
 
           {/* ── Manager Routes (unchanged) ─────────────── */}
+          <Route
+            path="/dashboard/manager/breakdown-studio"
+            element={
+              <ProtectedRoute requiredRole="manager">
+                <ProjectBreakdownStudio />
+              </ProtectedRoute>
+            }
+          />
           <Route
             path="/dashboard/manager/:tab/*"
             element={

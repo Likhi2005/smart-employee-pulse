@@ -170,10 +170,10 @@ export function TaskTable({
                                             />
                                         </td>
 
-                                        <td className={`border-b border-neutral-800 px-3 ${rowPadding}`}>
-                                            <div className="font-semibold text-neutral-50">{task.title}</div>
+                                        <td className={`border-b border-neutral-800 px-3 ${rowPadding} max-w-md overflow-hidden`}>
+                                            <div className="font-semibold text-neutral-50 truncate">{task.title}</div>
                                             {task.description && (
-                                                <div className="mt-0.5 line-clamp-1 text-[11px] text-neutral-500">
+                                                <div className="mt-0.5 line-clamp-2 text-[11px] text-neutral-500 break-words">
                                                     {task.description}
                                                 </div>
                                             )}
