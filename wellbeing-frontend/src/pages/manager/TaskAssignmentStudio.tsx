@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -6,13 +6,14 @@ import {
   Users, Briefcase, ChevronRight, BarChart3, ShieldCheck, UserPlus,
   ArrowRight, Info, Settings2, Filter, LayoutGrid, ListFilter,
   Check, Play, Sparkles, User, Clock, AlertTriangle, TrendingUp,
-  Target, GraduationCap, Scale
+  Target, GraduationCap, Scale, ChevronLeft, ChevronDown, Search, X, GripVertical
 } from 'lucide-react';
 import { getEmployeesForAssignment, getTeamTasks, assignBulkTasks } from '@/services/taskService';
 import { aiDistributeTasks } from '@/services/aiService';
 import { useAuth } from '@/hooks/useAuth';
 
 type StepStatus = 'idle' | 'running' | 'success' | 'warning' | 'failed';
+type ViewMode = 'board' | 'list';
 
 interface Task {
   _id: string;
@@ -38,6 +39,11 @@ interface Assignment {
   reason: string;
 }
 
+interface DragData {
+  taskId: string;
+  fromEmployeeId: string | null;
+}
+
 const STEPS = [
   { id: 'intake', label: 'Task Intake', desc: 'Analyzing unassigned backlog', icon: Briefcase },
   { id: 'analysis', label: 'Team Analysis', desc: 'Evaluating skills & bandwidth', icon: Users },
@@ -49,6 +55,7 @@ const STEPS = [
 export default function TaskAssignmentStudio() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const boardScrollRef = useRef<HTMLDivElement>(null);
   
   // -- State --
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -80,6 +87,13 @@ export default function TaskAssignmentStudio() {
     riskReduction: 0,
     speedImprovement: 0
   });
+
+  // NEW: Board view controls
+  const [viewMode, setViewMode] = useState<ViewMode>('board');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterWorkload, setFilterWorkload] = useState<'all' | 'overloaded' | 'underutilized'>('all');
+  const [showDiff, setShowDiff] = useState(false);
+  const [draggedTask, setDraggedTask] = useState<DragData | null>(null);
 
   // -- Initial Data Load --
   useEffect(() => {
@@ -183,6 +197,30 @@ export default function TaskAssignmentStudio() {
     setExplainability(prev => ({ ...prev, [taskId]: 'Manually reassigned by manager.' }));
   };
 
+  // Drag-drop handlers
+  const handleDragStart = (taskId: string, fromEmployeeId: string | null) => {
+    setDraggedTask({ taskId, fromEmployeeId });
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.currentTarget.classList.add('ring-2', 'ring-purple-500');
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.currentTarget.classList.remove('ring-2', 'ring-purple-500');
+  };
+
+  const handleDrop = (e: React.DragEvent, toEmployeeId: string | null) => {
+    e.preventDefault();
+    e.currentTarget.classList.remove('ring-2', 'ring-purple-500');
+    
+    if (draggedTask && draggedTask.taskId) {
+      reassignTask(draggedTask.taskId, toEmployeeId || '');
+      setDraggedTask(null);
+    }
+  };
+
   // -- Derived Data --
   const groupedTasks = useMemo(() => {
     const groups: Record<string, Task[]> = {};
@@ -203,6 +241,34 @@ export default function TaskAssignmentStudio() {
     const employee = employees.find(e => e._id === empId);
     return (employee?.currentWorkload || 0) + newEffort;
   };
+
+  const getWorkloadStatus = (workload: number) => {
+    if (workload > 40) return { label: 'Overloaded', color: 'text-rose-400', bg: 'bg-rose-500/10', border: 'border-rose-500/20' };
+    if (workload < 15) return { label: 'Underutilized', color: 'text-amber-400', bg: 'bg-amber-500/10', border: 'border-amber-500/20' };
+    return { label: 'Optimal', color: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20' };
+  };
+
+  const filteredEmployees = useMemo(() => {
+    let result = employees;
+    
+    // Search filter
+    if (searchQuery) {
+      result = result.filter(e => e.fullName.toLowerCase().includes(searchQuery.toLowerCase()));
+    }
+    
+    // Workload filter
+    if (filterWorkload === 'overloaded') {
+      result = result.filter(e => calculateWorkload(e._id) > 40);
+    } else if (filterWorkload === 'underutilized') {
+      result = result.filter(e => calculateWorkload(e._id) < 15);
+    }
+    
+    return result;
+  }, [employees, searchQuery, filterWorkload, assignments]);
+
+  const unassignedTasks = useMemo(() => {
+    return tasks.filter(t => !assignments[t._id]);
+  }, [tasks, assignments]);
 
   // -- UI Helpers --
   const getStepIcon = (status: StepStatus, Icon: any) => {
@@ -386,39 +452,93 @@ export default function TaskAssignmentStudio() {
           )}
         </aside>
 
-        {/* RIGHT PANEL: RESULTS */}
-        <section className="flex-1 bg-[#0A0A0A] p-8 overflow-y-auto pb-32">
-          <AnimatePresence mode="wait">
-            {Object.keys(assignments).length === 0 && !isRunning ? (
-              <motion.div 
-                key="empty" 
-                initial={{ opacity: 0 }} 
-                animate={{ opacity: 1 }}
-                className="h-full flex flex-col items-center justify-center text-center max-w-md mx-auto"
-              >
-                <div className="w-20 h-20 bg-purple-500/10 rounded-full flex items-center justify-center mb-6 border border-purple-500/20">
-                  <Play className="w-8 h-8 text-purple-400 fill-purple-400/20" />
-                </div>
-                <h3 className="text-2xl font-bold text-gray-100 mb-3">Ready to Allocate</h3>
-                <p className="text-gray-400 text-sm leading-relaxed mb-8">
-                  The AI matching engine is ready to analyze {tasks.length} unassigned tasks and distribute them across your team of {employees.length}.
-                </p>
-                <button 
-                  onClick={runAssignmentWorkflow}
-                  className="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-4 rounded-2xl shadow-[0_0_40px_rgba(147,51,234,0.3)] transition-all flex items-center justify-center gap-2"
+        {/* RIGHT PANEL: BOARD VIEW */}
+        <section className="flex-1 bg-[#0A0A0A] flex flex-col overflow-hidden pb-32">
+          {/* Board Controls */}
+          <div className="border-b border-gray-800 bg-[#0F0F13] p-4 shrink-0">
+            <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+              <div className="flex items-center gap-2 flex-1">
+                <Search className="w-4 h-4 text-gray-500" />
+                <input 
+                  type="text"
+                  placeholder="Search employees..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200 placeholder-gray-600 focus:ring-2 focus:ring-purple-500/50 outline-none"
+                />
+              </div>
+              
+              <div className="flex items-center gap-2">
+                <select 
+                  value={filterWorkload}
+                  onChange={(e) => setFilterWorkload(e.target.value as any)}
+                  className="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-xs text-gray-200 focus:ring-2 focus:ring-purple-500/50 outline-none"
                 >
-                  <Sparkles className="w-5 h-5" />
-                  Run Matching Engine
+                  <option value="all">All Status</option>
+                  <option value="overloaded">Overloaded</option>
+                  <option value="underutilized">Underutilized</option>
+                </select>
+              </div>
+
+              <div className="flex items-center gap-2 border border-gray-700 rounded-lg p-1 bg-gray-800/30">
+                <button 
+                  onClick={() => setViewMode('board')}
+                  className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${viewMode === 'board' ? 'bg-purple-600 text-white' : 'text-gray-400 hover:text-gray-200'}`}
+                >
+                  <LayoutGrid className="w-4 h-4" />
                 </button>
-              </motion.div>
-            ) : isRunning && Object.keys(assignments).length === 0 ? (
-               <motion.div 
-                 key="loading" 
-                 initial={{ opacity: 0 }} 
-                 animate={{ opacity: 1 }}
-                 className="h-full flex flex-col items-center justify-center"
-               >
-                 <div className="relative w-32 h-32 mb-8">
+                <button 
+                  onClick={() => setViewMode('list')}
+                  className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${viewMode === 'list' ? 'bg-purple-600 text-white' : 'text-gray-400 hover:text-gray-200'}`}
+                >
+                  <ListFilter className="w-4 h-4" />
+                </button>
+              </div>
+
+              {Object.keys(assignments).length > 0 && (
+                <button 
+                  onClick={() => setShowDiff(!showDiff)}
+                  className={`px-3 py-2 rounded-lg text-xs font-medium transition-colors ${showDiff ? 'bg-indigo-600/20 text-indigo-400 border border-indigo-500/30' : 'bg-gray-800 text-gray-400 border border-gray-700'}`}
+                >
+                  Show Changes
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Board or List Content */}
+          <div className="flex-1 overflow-hidden">
+            <AnimatePresence mode="wait">
+              {Object.keys(assignments).length === 0 && !isRunning ? (
+                <motion.div 
+                  key="empty" 
+                  initial={{ opacity: 0 }} 
+                  animate={{ opacity: 1 }}
+                  className="h-full flex flex-col items-center justify-center text-center max-w-md mx-auto"
+                >
+                  <div className="w-20 h-20 bg-purple-500/10 rounded-full flex items-center justify-center mb-6 border border-purple-500/20">
+                    <Play className="w-8 h-8 text-purple-400 fill-purple-400/20" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-gray-100 mb-3">Ready to Allocate</h3>
+                  <p className="text-gray-400 text-sm leading-relaxed mb-8">
+                    The AI matching engine is ready to analyze {tasks.length} unassigned tasks and distribute them across your team of {employees.length}.
+                  </p>
+                  <button 
+                    onClick={runAssignmentWorkflow}
+                    className="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-4 rounded-2xl shadow-[0_0_40px_rgba(147,51,234,0.3)] transition-all flex items-center justify-center gap-2"
+                  >
+                    <Sparkles className="w-5 h-5" />
+                    Run Matching Engine
+                  </button>
+                </motion.div>
+              ) : isRunning && Object.keys(assignments).length === 0 ? (
+                <motion.div 
+                  key="loading" 
+                  initial={{ opacity: 0 }} 
+                  animate={{ opacity: 1 }}
+                  className="h-full flex flex-col items-center justify-center"
+                >
+                  <div className="relative w-32 h-32 mb-8">
                     <motion.div 
                       animate={{ rotate: 360 }} 
                       transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
@@ -430,130 +550,250 @@ export default function TaskAssignmentStudio() {
                       className="absolute inset-2 rounded-full border-4 border-t-indigo-500 border-r-transparent border-b-transparent border-l-transparent"
                     />
                     <div className="absolute inset-0 flex items-center justify-center">
-                       <Zap className="w-10 h-10 text-purple-400 animate-pulse" />
+                      <Zap className="w-10 h-10 text-purple-400 animate-pulse" />
                     </div>
-                 </div>
-                 <h3 className="text-xl font-bold text-gray-200">AI Matching in Progress</h3>
-                 <p className="text-gray-500 text-sm mt-2">Computing optimal workload distribution...</p>
-               </motion.div>
-            ) : (
-              <motion.div 
-                key="grid" 
-                initial={{ opacity: 0, y: 20 }} 
-                animate={{ opacity: 1, y: 0 }}
-                className="grid grid-cols-1 xl:grid-cols-2 gap-6"
-              >
-                {employees.map((emp) => {
-                  const empTasks = groupedTasks[emp._id] || [];
-                  const workload = calculateWorkload(emp._id);
-                  const isOverloaded = workload > 40; // Example threshold
-                  const isUnderutilized = workload < 15;
-
-                  return (
-                    <motion.div 
-                      key={emp._id}
-                      className={`bg-[#121217] border rounded-3xl p-6 transition-all group overflow-hidden relative
-                        ${isOverloaded ? 'border-rose-500/30' : 'border-gray-800 hover:border-gray-700'}`}
-                    >
-                      {/* Background Glow */}
-                      <div className={`absolute -right-20 -top-20 w-40 h-40 rounded-full blur-[80px] opacity-10 transition-colors
-                        ${isOverloaded ? 'bg-rose-500' : 'bg-purple-500'}`} 
-                      />
-
-                      <div className="flex items-center justify-between mb-6 relative z-10">
-                        <div className="flex items-center gap-4">
-                          <div className="w-12 h-12 rounded-2xl bg-gray-800 flex items-center justify-center border border-gray-700 group-hover:scale-105 transition-transform">
-                             <User className="w-6 h-6 text-gray-400" />
-                          </div>
-                          <div>
-                            <h4 className="font-bold text-gray-100">{emp.fullName}</h4>
-                            <p className="text-xs text-gray-500">{emp.department || 'Production'}</p>
-                          </div>
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-200">AI Matching in Progress</h3>
+                  <p className="text-gray-500 text-sm mt-2">Computing optimal workload distribution...</p>
+                </motion.div>
+              ) : viewMode === 'board' ? (
+                <motion.div 
+                  key="board"
+                  initial={{ opacity: 0 }} 
+                  animate={{ opacity: 1 }}
+                  className="h-full flex flex-col overflow-hidden"
+                >
+                  {/* Horizontal Board */}
+                  <div 
+                    ref={boardScrollRef}
+                    className="flex-1 overflow-x-auto overflow-y-hidden p-4"
+                  >
+                    <div className="flex gap-4 h-full min-w-min">
+                      {/* Unassigned Tasks Column */}
+                      <motion.div 
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        className="flex-shrink-0 w-80 bg-[#121217] border-2 border-dashed border-gray-700 rounded-2xl p-4 flex flex-col"
+                      >
+                        <h3 className="text-sm font-bold text-gray-300 mb-4 flex items-center gap-2">
+                          <AlertCircle className="w-4 h-4 text-amber-400" />
+                          Unassigned ({unassignedTasks.length})
+                        </h3>
+                        <div 
+                          onDragOver={handleDragOver}
+                          onDragLeave={handleDragLeave}
+                          onDrop={(e) => handleDrop(e, null)}
+                          className="flex-1 overflow-y-auto space-y-3 rounded-xl transition-all"
+                        >
+                          {unassignedTasks.length === 0 ? (
+                            <div className="flex items-center justify-center h-full text-gray-600">
+                              <span className="text-xs font-medium">All tasks assigned ✓</span>
+                            </div>
+                          ) : (
+                            unassignedTasks.map(t => (
+                              <motion.div 
+                                key={t._id}
+                                draggable
+                                onDragStart={() => handleDragStart(t._id, null)}
+                                className="bg-[#0A0A0A] border border-gray-800 hover:border-amber-500/50 rounded-lg p-3 cursor-move hover:shadow-lg transition-all hover:scale-105 group"
+                              >
+                                <div className="flex items-start gap-2">
+                                  <GripVertical className="w-3 h-3 text-gray-700 mt-0.5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-xs font-bold text-gray-200 truncate">{t.title}</p>
+                                    <div className="flex items-center gap-2 mt-1">
+                                      <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${t.priority === 'high' ? 'bg-rose-500/20 text-rose-400' : t.priority === 'medium' ? 'bg-amber-500/20 text-amber-400' : 'bg-blue-500/20 text-blue-400'}`}>
+                                        {t.priority}
+                                      </span>
+                                      <span className="text-[10px] text-gray-500 flex items-center gap-1">
+                                        <Clock className="w-3 h-3" /> {t.effort}h
+                                      </span>
+                                    </div>
+                                  </div>
+                                </div>
+                              </motion.div>
+                            ))
+                          )}
                         </div>
-                        <div className="text-right">
-                          <div className={`text-xl font-black ${isOverloaded ? 'text-rose-400' : 'text-gray-100'}`}>
-                            {workload} <span className="text-[10px] font-bold text-gray-500 uppercase">Hrs</span>
-                          </div>
-                          <div className="flex items-center gap-1 justify-end mt-1">
-                             {isOverloaded && <AlertTriangle className="w-3 h-3 text-rose-500" />}
-                             <span className={`text-[10px] font-bold uppercase tracking-wider ${isOverloaded ? 'text-rose-500' : isUnderutilized ? 'text-amber-500' : 'text-emerald-500'}`}>
-                               {isOverloaded ? 'Overloaded' : isUnderutilized ? 'Underutilized' : 'Optimal'}
-                             </span>
-                          </div>
-                        </div>
-                      </div>
+                      </motion.div>
 
-                      {/* Workload Bar */}
-                      <div className="mb-8 relative z-10">
-                        <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
-                           <motion.div 
-                             initial={{ width: 0 }} 
-                             animate={{ width: `${Math.min(100, (workload/50)*100)}%` }} 
-                             className={`h-full rounded-full ${isOverloaded ? 'bg-rose-500 shadow-[0_0_10px_rgba(244,63,94,0.4)]' : 'bg-purple-500'}`} 
-                           />
-                        </div>
-                      </div>
+                      {/* Employee Columns */}
+                      {filteredEmployees.map((emp, idx) => {
+                        const empTasks = groupedTasks[emp._id] || [];
+                        const workload = calculateWorkload(emp._id);
+                        const status = getWorkloadStatus(workload);
+                        const isOverloaded = workload > 40;
 
-                      <div className="space-y-3 relative z-10">
-                        {empTasks.length === 0 ? (
-                          <div className="py-8 border-2 border-dashed border-gray-800 rounded-2xl flex flex-col items-center justify-center text-gray-600">
-                             <Users className="w-6 h-6 mb-2 opacity-20" />
-                             <span className="text-xs font-medium">No tasks assigned</span>
-                          </div>
-                        ) : (
-                          empTasks.map((t) => (
-                            <motion.div 
-                              key={t._id}
-                              initial={{ opacity: 0, x: 20 }}
-                              animate={{ opacity: 1, x: 0 }}
-                              className="group/task bg-[#0A0A0A] border border-gray-800 hover:border-purple-500/50 rounded-2xl p-4 transition-all"
-                            >
-                              <div className="flex justify-between items-start mb-2">
-                                <span className="text-sm font-bold text-gray-200 group-hover/task:text-purple-400 transition-colors">{t.title}</span>
+                        return (
+                          <motion.div 
+                            key={emp._id}
+                            initial={{ opacity: 0, x: 20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: idx * 0.05 }}
+                            className={`flex-shrink-0 w-80 bg-[#121217] border rounded-2xl flex flex-col transition-all overflow-hidden ${isOverloaded ? 'border-rose-500/50 shadow-[0_0_20px_rgba(244,63,94,0.1)]' : 'border-gray-800'}`}
+                          >
+                            {/* Column Header */}
+                            <div className={`p-4 border-b border-gray-800 ${status.bg}`}>
+                              <div className="flex items-center justify-between mb-3">
                                 <div className="flex items-center gap-2">
-                                  <span className="text-[10px] font-bold text-gray-500 flex items-center gap-1">
-                                    <Clock className="w-3 h-3" /> {t.effort}h
-                                  </span>
-                                  {/* Reassignment Dropdown */}
-                                  <div className="relative group/reassign">
-                                     <button className="p-1 hover:bg-gray-800 rounded-md text-gray-600 hover:text-gray-200 transition-colors">
-                                       <RefreshCw className="w-3.5 h-3.5" />
-                                     </button>
-                                     <div className="absolute right-0 top-full mt-1 w-48 bg-[#121217] border border-gray-700 rounded-xl shadow-2xl z-50 opacity-0 pointer-events-none group-hover/reassign:opacity-100 group-hover/reassign:pointer-events-auto transition-all p-2">
-                                        <p className="text-[10px] font-bold text-gray-500 p-2 border-b border-gray-800 mb-1 uppercase tracking-wider">Move Task To:</p>
-                                        <div className="max-h-40 overflow-y-auto">
-                                          {employees.map(e => e._id !== emp._id && (
-                                            <button 
-                                              key={e._id} 
-                                              onClick={() => reassignTask(t._id, e._id)}
-                                              className="w-full text-left px-3 py-2 text-xs text-gray-400 hover:bg-purple-600/10 hover:text-purple-400 rounded-lg transition-colors truncate"
-                                            >
-                                              {e.fullName}
-                                            </button>
-                                          ))}
-                                        </div>
-                                     </div>
+                                  <div className="w-8 h-8 rounded-lg bg-gray-800 flex items-center justify-center">
+                                    <User className="w-4 h-4 text-gray-400" />
+                                  </div>
+                                  <div>
+                                    <p className="text-sm font-bold text-gray-100">{emp.fullName}</p>
+                                    <p className="text-[10px] text-gray-500">{emp.department || 'Team'}</p>
                                   </div>
                                 </div>
                               </div>
-                              
-                              {/* Explainability */}
-                              {explainability[t._id] && (
-                                <div className="mt-3 flex items-start gap-2 text-[10px] text-gray-500 bg-gray-900/50 p-2 rounded-lg border border-gray-800/50">
-                                   <Info className="w-3.5 h-3.5 text-indigo-400 shrink-0 mt-0.5" />
-                                   <span>{explainability[t._id]}</span>
+
+                              {/* Workload Bar */}
+                              <div className="space-y-1.5">
+                                <div className="flex justify-between items-center">
+                                  <span className="text-xs font-bold text-gray-300">{workload}h / 50h</span>
+                                  <span className={`text-[10px] font-bold uppercase ${status.color}`}>
+                                    {status.label}
+                                  </span>
                                 </div>
+                                <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
+                                  <motion.div 
+                                    initial={{ width: 0 }}
+                                    animate={{ width: `${Math.min(100, (workload / 50) * 100)}%` }}
+                                    className={`h-full rounded-full ${isOverloaded ? 'bg-rose-500' : 'bg-purple-500'}`}
+                                  />
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Tasks Dropzone */}
+                            <div 
+                              onDragOver={handleDragOver}
+                              onDragLeave={handleDragLeave}
+                              onDrop={(e) => handleDrop(e, emp._id)}
+                              className="flex-1 overflow-y-auto p-3 space-y-2 min-h-[300px]"
+                            >
+                              {empTasks.length === 0 ? (
+                                <div className="flex items-center justify-center h-full text-gray-600">
+                                  <span className="text-xs font-medium">Drop tasks here</span>
+                                </div>
+                              ) : (
+                                empTasks.map((t) => (
+                                  <motion.div 
+                                    key={t._id}
+                                    draggable
+                                    onDragStart={() => handleDragStart(t._id, emp._id)}
+                                    className="bg-[#0A0A0A] border border-gray-800 hover:border-purple-500/50 rounded-lg p-3 cursor-move hover:shadow-lg transition-all hover:scale-105 group"
+                                  >
+                                    <div className="flex items-start gap-2">
+                                      <GripVertical className="w-3 h-3 text-gray-700 mt-0.5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                      <div className="flex-1 min-w-0">
+                                        <p className="text-xs font-bold text-gray-200 truncate">{t.title}</p>
+                                        <div className="flex items-center gap-1 mt-1.5 flex-wrap">
+                                          <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${t.priority === 'high' ? 'bg-rose-500/20 text-rose-400' : t.priority === 'medium' ? 'bg-amber-500/20 text-amber-400' : 'bg-blue-500/20 text-blue-400'}`}>
+                                            {t.priority}
+                                          </span>
+                                          <span className="text-[10px] text-gray-500 flex items-center gap-1">
+                                            <Clock className="w-3 h-3" /> {t.effort}h
+                                          </span>
+                                        </div>
+                                        
+                                        {/* Compact Reasoning */}
+                                        {explainability[t._id] && (
+                                          <div className="mt-2 text-[9px] text-gray-500 leading-tight line-clamp-2">
+                                            💡 {explainability[t._id]}
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </motion.div>
+                                ))
                               )}
-                            </motion.div>
-                          ))
-                        )}
+                            </div>
+                          </motion.div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </motion.div>
+              ) : (
+                /* LIST VIEW */
+                <motion.div 
+                  key="list"
+                  initial={{ opacity: 0 }} 
+                  animate={{ opacity: 1 }}
+                  className="flex-1 overflow-y-auto p-4"
+                >
+                  <div className="space-y-3">
+                    {/* Unassigned Section */}
+                    {unassignedTasks.length > 0 && (
+                      <div className="bg-[#121217] border border-amber-500/20 rounded-2xl p-4">
+                        <h3 className="text-sm font-bold text-amber-400 mb-3 flex items-center gap-2">
+                          <AlertCircle className="w-4 h-4" /> Unassigned Tasks ({unassignedTasks.length})
+                        </h3>
+                        <div className="space-y-2">
+                          {unassignedTasks.map(t => (
+                            <div key={t._id} className="bg-[#0A0A0A] border border-gray-800 rounded-lg p-3 flex items-center justify-between">
+                              <div className="flex-1">
+                                <p className="text-sm font-bold text-gray-200">{t.title}</p>
+                                <div className="flex items-center gap-2 mt-1">
+                                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${t.priority === 'high' ? 'bg-rose-500/20 text-rose-400' : 'bg-amber-500/20 text-amber-400'}`}>
+                                    {t.priority}
+                                  </span>
+                                  <span className="text-[10px] text-gray-500">{t.effort}h</span>
+                                </div>
+                              </div>
+                              <select 
+                                onChange={(e) => e.target.value && reassignTask(t._id, e.target.value)}
+                                className="bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs text-gray-200 focus:ring-2 focus:ring-purple-500/50 outline-none"
+                              >
+                                <option value="">Assign to...</option>
+                                {filteredEmployees.map(emp => (
+                                  <option key={emp._id} value={emp._id}>{emp.fullName}</option>
+                                ))}
+                              </select>
+                            </div>
+                          ))}
+                        </div>
                       </div>
-                    </motion.div>
-                  );
-                })}
-              </motion.div>
-            )}
-          </AnimatePresence>
+                    )}
+
+                    {/* Assigned Section */}
+                    {filteredEmployees.map(emp => {
+                      const empTasks = groupedTasks[emp._id] || [];
+                      if (empTasks.length === 0) return null;
+                      const workload = calculateWorkload(emp._id);
+                      const status = getWorkloadStatus(workload);
+
+                      return (
+                        <div key={emp._id} className={`bg-[#121217] border rounded-2xl p-4 ${status.border}`}>
+                          <div className="flex items-center justify-between mb-4">
+                            <div>
+                              <p className="text-sm font-bold text-gray-100">{emp.fullName}</p>
+                              <p className={`text-xs font-bold ${status.color}`}>{workload}h - {status.label}</p>
+                            </div>
+                          </div>
+                          <div className="space-y-2">
+                            {empTasks.map(t => (
+                              <div key={t._id} className="bg-[#0A0A0A] border border-gray-800 rounded-lg p-3 flex items-center justify-between">
+                                <div className="flex-1">
+                                  <p className="text-sm font-bold text-gray-200">{t.title}</p>
+                                  <div className="flex items-center gap-2 mt-1">
+                                    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${t.priority === 'high' ? 'bg-rose-500/20 text-rose-400' : 'bg-amber-500/20 text-amber-400'}`}>
+                                      {t.priority}
+                                    </span>
+                                    <span className="text-[10px] text-gray-500">{t.effort}h</span>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
         </section>
       </main>
 
