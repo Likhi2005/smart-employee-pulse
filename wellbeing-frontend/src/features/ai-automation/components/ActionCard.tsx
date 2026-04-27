@@ -4,8 +4,8 @@ import { AlertCircle, CheckCircle, HelpCircle } from 'lucide-react';
 
 interface ActionCardProps {
     conflict: any;
-    onApply: (id: string) => void;
-    onWhy: (id: string) => void;
+    onApply: (conflict: any) => void;
+    onWhy: (conflict: any) => void;
     isApplying: boolean;
 }
 
@@ -44,14 +44,14 @@ export const ActionCard: React.FC<ActionCardProps> = ({ conflict, onApply, onWhy
 
             <div className="flex gap-2 mt-2">
                 <button
-                    onClick={() => onApply(conflict.id)}
+                    onClick={() => onApply(conflict)}
                     disabled={isApplying}
                     className="flex-1 bg-amber-600 hover:bg-amber-500 text-white py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
                 >
                     {isApplying ? 'Applying...' : 'Apply Fix'}
                 </button>
                 <button
-                    onClick={() => onWhy(conflict.id)}
+                    onClick={() => onWhy(conflict)}
                     className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors"
                 >
                     <HelpCircle className="w-4 h-4" />

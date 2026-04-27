@@ -68,7 +68,7 @@ export const ManagerSidebar: React.FC = () => {
                         to: '/dashboard/manager/team',
                         subItems: [
                             { icon: Users, label: 'All Members', to: '/dashboard/manager/team' },
-                            { icon: Zap, label: 'Workload Status', to: '/dashboard/manager/team?section=workload' },
+                            { icon: Zap, label: 'Workload Status', to: '/dashboard/manager/workload' },
                         ],
                     },
                     {

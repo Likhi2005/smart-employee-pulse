@@ -19,7 +19,10 @@ interface LoadingState {
 
 export function WorkloadStatusView() {
     const [searchParams, setSearchParams] = useSearchParams()
-    const [tab, setTab] = useState<'overview' | 'team' | 'trends'>('overview')
+    const [tab, setTab] = useState<'overview' | 'team' | 'trends'>(() => {
+        const workloadTab = searchParams.get('workloadTab')
+        return workloadTab === 'team' || workloadTab === 'trends' ? workloadTab : 'overview'
+    })
     const [days, setDays] = useState<7 | 30 | 90>(30)
     const [loading, setLoading] = useState<LoadingState>({
         summary: true,
@@ -111,14 +114,15 @@ export function WorkloadStatusView() {
         }
     }, [])
 
-    // Sync tab from URL query (?section=distribution|analytics|team)
+    // Sync tab from URL query (?workloadTab=overview|team|trends)
     useEffect(() => {
-        const section = searchParams.get('section')
-        if (section === 'team') {
+        const workloadTab = searchParams.get('workloadTab')
+
+        if (workloadTab === 'team') {
             setTab('team')
             return
         }
-        if (section === 'analytics') {
+        if (workloadTab === 'trends') {
             setTab('trends')
             return
         }
@@ -149,8 +153,11 @@ export function WorkloadStatusView() {
     const handleTabChange = useCallback(
         (nextTab: 'overview' | 'team' | 'trends') => {
             setTab(nextTab)
-            const section = nextTab === 'team' ? 'team' : nextTab === 'trends' ? 'analytics' : 'distribution'
-            setSearchParams({ section })
+            setSearchParams((prev) => {
+                const next = new URLSearchParams(prev)
+                next.set('workloadTab', nextTab)
+                return next
+            })
         },
         [setSearchParams]
     )

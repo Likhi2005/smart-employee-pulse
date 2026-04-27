@@ -1,19 +1,71 @@
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Users, CheckCircle, Clock, AlertCircle, TrendingUp } from 'lucide-react';
 import { SummaryCard } from '../stats/SummaryCard';
 import { WorkloadChart } from '../stats/WorkloadChart';
 import { TaskStatusChart } from '../stats/TaskStatusChart';
 import { EmployeesList } from '../stats/EmployeesList';
+import { getManagerDashboard, type ManagerDashboard } from '@/services/dashboardService';
 
 export function ManagerOverviewTab() {
-    // TODO: Replace mock data with real API calls
-    const summaryStats = {
-        totalEmployees: 6,
-        activeTasks: 205,
-        completedTasks: 145,
-        overloadedEmployees: 2,
-        availableEmployees: 2,
+    const [data, setData] = useState<ManagerDashboard | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                setLoading(true);
+                const dashboardData = await getManagerDashboard();
+                setData(dashboardData);
+            } catch (err: any) {
+                console.error('Failed to fetch manager dashboard:', err);
+                setError(err.message || 'Failed to load dashboard data');
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchData();
+    }, []);
+
+    const summaryStats = data ? {
+        totalEmployees: data.teamStats.totalEmployees,
+        activeTasks: data.taskStats.accepted + data.taskStats.pending,
+        completedTasks: data.taskStats.completed,
+        overloadedEmployees: data.teamWorkload.filter(e => e.currentWorkload >= 35).length,
+        availableEmployees: data.teamWorkload.filter(e => e.currentWorkload < 15).length,
+    } : {
+        totalEmployees: 0,
+        activeTasks: 0,
+        completedTasks: 0,
+        overloadedEmployees: 0,
+        availableEmployees: 0,
     };
+
+    if (loading) return (
+        <div className="flex h-[400px] items-center justify-center">
+            <div className="flex flex-col items-center gap-2">
+                <Clock className="h-8 w-8 animate-spin text-amber-500" />
+                <p className="text-neutral-400 font-medium">Syncing team intelligence...</p>
+            </div>
+        </div>
+    );
+
+    if (error) return (
+        <div className="p-6">
+            <div className="rounded-xl border border-red-500/20 bg-red-500/10 p-6 text-center">
+                <AlertCircle className="mx-auto h-8 w-8 text-red-500 mb-2" />
+                <h3 className="text-lg font-semibold text-red-400">Error Loading Dashboard</h3>
+                <p className="text-red-400/80 mt-1">{error}</p>
+                <button 
+                    onClick={() => window.location.reload()}
+                    className="mt-4 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+                >
+                    Retry
+                </button>
+            </div>
+        </div>
+    );
 
     return (
         <div className="space-y-6 p-6">
@@ -68,14 +120,20 @@ export function ManagerOverviewTab() {
 
             {/* Charts Grid */}
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-                <WorkloadChart />
-                <TaskStatusChart />
+                <WorkloadChart teamWorkload={data.teamWorkload} />
+                <TaskStatusChart taskStats={data.taskStats} />
             </div>
 
             {/* Employees Lists */}
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-                <EmployeesList type="overloaded" />
-                <EmployeesList type="available" />
+                <EmployeesList 
+                    type="overloaded" 
+                    teamWorkload={data.teamWorkload} 
+                />
+                <EmployeesList 
+                    type="available" 
+                    teamWorkload={data.teamWorkload} 
+                />
             </div>
         </div>
     );

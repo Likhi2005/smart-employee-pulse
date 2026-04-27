@@ -508,10 +508,55 @@ Respond ONLY with JSON:
     }
 };
 
+const generateDecisionReasoning = async (context) => {
+    try {
+        const ai = initializeAI();
+        const { type, teamState, conflictDesc } = context;
+
+        const prompt = `
+You are an AI Operations Manager. Explain the reasoning for a resource allocation fix.
+
+Conflict Type: ${type}
+Context: ${conflictDesc}
+
+Team Status:
+${teamState}
+
+Provide a detailed reasoning in JSON format:
+{
+  "constraintsApplied": ["List of constraints like 'Workload < 35%'", "Skill matching"],
+  "candidateRanking": [
+    { "name": "Best Candidate Name", "score": 95, "reason": "Detailed reason why they are the best fit" },
+    { "name": "Alternative Name", "score": 65, "reason": "Reason why they are a backup" }
+  ],
+  "rejectionReasons": ["Why others were rejected"],
+  "finalScore": 95
+}
+`;
+
+        if (ai.provider === 'gemini') {
+            const result = await ai.client.generateContent(prompt);
+            const text = result.response.text();
+            return JSON.parse(text.replace(/```json|```/g, '').trim());
+        } else {
+            const completion = await ai.client.chat.completions.create({
+                messages: [{ role: 'user', content: prompt }],
+                model: 'llama3-8b-8192',
+                response_format: { type: 'json_object' },
+            });
+            return JSON.parse(completion.choices[0].message.content);
+        }
+    } catch (error) {
+        console.error('Error generating reasoning:', error);
+        return null;
+    }
+};
+
 module.exports = {
     detectTaskPriority,
     smartAssignTask,
     generateTaskBreakdown,
     generatePerformanceInsights,
     aiDistributeTasks,
+    generateDecisionReasoning,
 };

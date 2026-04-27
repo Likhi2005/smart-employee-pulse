@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { PriorityActionsPanel } from './components/PriorityActionsPanel';
+import { AIInsightsPanel } from './components/AIInsightsPanel';
 import { SmartActionsPanel } from './components/SmartActionsPanel';
 import { TeamSnapshot } from './components/TeamSnapshot';
 import { SimulationSlider } from './components/SimulationSlider';
@@ -17,7 +18,9 @@ export const AIAutomationPage: React.FC = () => {
         decisionTrace, 
         fetchDecisionTrace, 
         loadingTrace,
-        setDecisionTrace
+        setDecisionTrace,
+        insights,
+        loadingInsights
     } = useAIActions();
 
     const { riskMode, setRiskMode, metrics, isSimulating } = useSimulation();
@@ -69,15 +72,18 @@ export const AIAutomationPage: React.FC = () => {
                             <PriorityActionsPanel
                                 conflicts={conflicts}
                                 loading={loadingConflicts}
-                                onApply={(id) => applyFix(id, { conflictId: id })}
+                                onApply={(conflict) => applyFix(conflict)}
                                 onWhy={handleWhy}
                                 isApplying={isApplying}
                             />
                         </section>
                         
                         <section className="pt-6 border-t border-gray-800">
-                            <h2 className="text-xl font-bold text-gray-100 mb-6">Execution Tools</h2>
-                            <SmartActionsPanel />
+                            <h2 className="text-xl font-bold text-gray-100 mb-6">Execution & Insights</h2>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <SmartActionsPanel />
+                                <AIInsightsPanel insights={insights} loading={loadingInsights} />
+                            </div>
                         </section>
                     </div>
 

@@ -1,6 +1,6 @@
 import { memo, useMemo } from 'react'
 import { motion } from 'framer-motion'
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell } from 'recharts'
 
 interface TeamWorkloadItem {
     _id: string
@@ -77,10 +77,12 @@ export const WorkloadChart = memo(function WorkloadChart({ teamWorkload }: Workl
                     />
                     <Bar
                         dataKey="workload"
-                        fill="#3b82f6"
-                        radius={[8, 8, 0, 0]}
-                        shape={<Bar />}
-                    />
+                        radius={[4, 4, 0, 0]}
+                    >
+                        {chartData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={getWorkloadColor(entry.workloadLevel)} />
+                        ))}
+                    </Bar>
                 </BarChart>
             </ResponsiveContainer>
             <div className="mt-6 grid grid-cols-4 gap-4 text-xs">

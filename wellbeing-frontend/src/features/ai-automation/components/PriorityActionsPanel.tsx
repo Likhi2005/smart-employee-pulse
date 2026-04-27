@@ -6,8 +6,8 @@ import { AnimatePresence } from 'framer-motion';
 interface PriorityActionsPanelProps {
     conflicts: any[];
     loading: boolean;
-    onApply: (id: string) => void;
-    onWhy: (id: string) => void;
+    onApply: (conflict: any) => void;
+    onWhy: (conflict: any) => void;
     isApplying: string | null;
 }
 

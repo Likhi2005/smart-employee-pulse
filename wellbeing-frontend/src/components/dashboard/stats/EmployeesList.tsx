@@ -51,7 +51,7 @@ export const EmployeesList = memo(function EmployeesList({ type, teamWorkload }:
 
     const filteredEmployees = useMemo(() => teamWorkload.filter((emp) => {
         if (type === 'overloaded') {
-            return emp.currentWorkload > 30
+            return emp.currentWorkload >= 35
         }
         return emp.currentWorkload < 15
     }), [teamWorkload, type])
