@@ -12,6 +12,7 @@ import { RegisterPage } from '@/pages/RegisterPage'
 import { LandingPage } from '@/pages/LandingPage'
 import ManagerDashboardPage from '@/pages/ManagerDashboardPage'
 import ProjectBreakdownStudio from '@/pages/manager/ProjectBreakdownStudio'
+import TaskAssignmentStudio from '@/pages/manager/TaskAssignmentStudio'
 import { EmployeeLayout } from '@/components/layouts/EmployeeLayout'
 import { useAuth } from '@/hooks/useAuth'
 
@@ -49,6 +50,14 @@ const App: React.FC = () => {
             element={
               <ProtectedRoute requiredRole="manager">
                 <ProjectBreakdownStudio />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/manager/assignment-studio"
+            element={
+              <ProtectedRoute requiredRole="manager">
+                <TaskAssignmentStudio />
               </ProtectedRoute>
             }
           />

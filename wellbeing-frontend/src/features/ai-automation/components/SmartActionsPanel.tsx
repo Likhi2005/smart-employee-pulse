@@ -17,6 +17,8 @@ export const SmartActionsPanel: React.FC = () => {
     const handleActionClick = (actionId: string) => {
         if (actionId === 'breakdown') {
             navigate('/dashboard/manager/breakdown-studio');
+        } else if (actionId === 'assign') {
+            navigate('/dashboard/manager/assignment-studio');
         } else {
             setSelectedAction(actionId);
         }
