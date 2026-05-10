@@ -41,5 +41,10 @@ export const aiAutomationService = {
     getDecisionTrace: async (id: string) => {
         const response = await aiApiClient.get(`/decision-trace/${id}`);
         return response.data;
+    },
+    
+    getInsights: async () => {
+        const response = await aiApiClient.get('/performance-insights');
+        return response.data;
     }
 };

@@ -20,6 +20,7 @@ export async function rankTaskCandidates(payload: {
     dueDate?: string
     isMandatory?: boolean
     requiredSkills?: string[]
+    department?: string
 }) {
     const response = await api.post('/tasks/rank-candidates', payload)
     return {
@@ -314,7 +315,24 @@ export async function breakDownTask(payload: { title: string; description?: stri
 }
 
 export async function createBulkTasks(tasks: CreateTaskPayload[]) {
-    const response = await api.post('/tasks/bulk-create', { tasks })
+    const normalizedTasks = (tasks || [])
+        .map((task) => ({
+            title: String(task?.title || '').trim(),
+            description: String(task?.description || '').trim(),
+            effort: Math.max(1, Number(task?.effort || 1)),
+            priority: ['low', 'medium', 'high'].includes(String(task?.priority || '').toLowerCase())
+                ? String(task?.priority).toLowerCase()
+                : 'medium',
+            dueDate: task?.dueDate || undefined,
+            isMandatory: Boolean(task?.isMandatory),
+        }))
+        .filter((task) => task.title.length > 0)
+
+    if (normalizedTasks.length === 0) {
+        throw new Error('No valid tasks to create. Ensure each task has a title and effort >= 1.')
+    }
+
+    const response = await api.post('/tasks/bulk-create', { tasks: normalizedTasks })
     return response.data
 }
 

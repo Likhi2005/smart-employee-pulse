@@ -18,6 +18,9 @@ process.on('uncaughtException', (error) => {
 connectDB();
 bootstrapTaskEvents();
 
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
 // Middleware
 app.use((req, res, next) => {
     const started = Date.now();
@@ -46,8 +49,6 @@ app.use(cors({
         process.env.FRONTEND_URL,
     ]
 }));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
 
 // Routes
 app.use('/api/auth', require('./routes/auth'));

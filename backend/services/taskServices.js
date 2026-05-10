@@ -832,8 +832,10 @@ async function rankTaskCandidates(payload, { companyId, actorId = null }) {
     const requiredSkills = Array.isArray(payload.requiredSkills)
         ? payload.requiredSkills
         : []
+    
+    const department = payload.department || null
 
-    const result = await rankCandidates({ companyId, taskInput, requiredSkills })
+    const result = await rankCandidates({ companyId, taskInput, requiredSkills, department })
 
     if (payload.taskId && (result?.rankedCandidates?.length || 0) > 0) {
         try {

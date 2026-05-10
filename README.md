@@ -35,18 +35,15 @@
 
 ### 1. Employee Command Center
 *   **Hero Decision Band**: Actionable insights delivered in < 5 seconds.
-*   **Kanban Board**: Drag-and-drop task lifecycle management (Pending, In-progress, Completed).
-*   **Daily Insights**: Personal performance and wellness analytics.
-*   **Task Calendar**: Visual schedule for deadline tracking and workload planning.
+*   **Priority Inbox**: Intelligent task prioritization and decision queue.
 *   **Wellness Pipeline**: Daily sentiment surveys and mood tracking.
+*   **Performance Metrics**: Real-time feedback on efficiency and workload.
 
 ### 2. Manager Command Center
-*   **AI Task Manager**: Automated task generation, prioritization, and tracking.
-*   **Policy & Rule Engine**: Hybrid deterministic and AI-driven policy validation for team operations.
-*   **Task Templates**: Standardized reusable project scaffolding.
-*   **Individual Analytics**: Deep-dive insights into each user's performance and wellness trends.
-*   **Activity History**: Comprehensive audit logs and task evolution history.
-*   **Workload Status**: Granular analytics and capacity heatmaps.
+*   **Team Snapshot**: Real-time heatmap of team capacity and risk levels.
+*   **Workload Status**: Granular analytics on employee bandwidth.
+*   **Leaderboard**: Gamified performance tracking and recognition.
+*   **Task Management**: Advanced lifecycle tracking from pending to approved.
 
 ### 3. AI Decision Center (Automation Studio)
 *   **Priority Actions**: AI-detected bottlenecks (Workload, Deadline, Skill gaps).
@@ -70,7 +67,8 @@
 - **MongoDB / Mongoose** - Document-based data orchestration.
 - **Groq / Gemini 1.5** - Multi-model AI provider for intelligent features.
 - **JWT / Bcrypt** - Secure enterprise-grade authentication.
-
+- **Git** - Version control
+- **GitHub** - Repository hosting
 ---
 
 ## 📊 Weekly Status Updates

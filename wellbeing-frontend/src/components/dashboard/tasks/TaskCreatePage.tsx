@@ -74,6 +74,13 @@ export function TaskCreatePage() {
     const [createdTaskId, setCreatedTaskId] = useState<string | null>(null)
     const [templateHydrated, setTemplateHydrated] = useState(false)
 
+    // Reset templateHydrated when templateId changes
+    useEffect(() => {
+        if (templateId) {
+            setTemplateHydrated(false)
+        }
+    }, [templateId])
+
     const [baseEmployees, setBaseEmployees] = useState<EmployeeCandidate[]>([])
     const [rankedCandidates, setRankedCandidates] = useState<CandidateRanking[]>([])
     const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(null)
@@ -163,7 +170,7 @@ export function TaskCreatePage() {
         return () => {
             active = false
         }
-    }, [templateId, templateHydrated])
+    }, [templateId])
 
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -343,6 +350,7 @@ export function TaskCreatePage() {
                 dueDate: draft.dueDate || undefined,
                 isMandatory: draft.mandatory,
                 requiredSkills: parseSkills(enrich.skills),
+                department: enrich.department || undefined,
             })
 
             setRankedCandidates(ranked.rankedCandidates || [])

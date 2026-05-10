@@ -18,7 +18,15 @@ export function AIOrchestrationPage() {
                 window.location.href = '/dashboard/manager/tasks'
             }, 2000)
         } catch (err: any) {
-            setError(err?.response?.data?.message || 'Bulk creation failed.')
+            const apiMessage = err?.response?.data?.message
+            const validationErrors = err?.response?.data?.errors
+            const localMessage = err?.message
+
+            if (Array.isArray(validationErrors) && validationErrors.length > 0) {
+                setError(validationErrors.map((e: any) => e.msg).join(' | '))
+            } else {
+                setError(apiMessage || localMessage || 'Bulk creation failed.')
+            }
         } finally {
             setIsCreatingTask(false)
         }

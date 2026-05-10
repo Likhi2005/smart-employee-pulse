@@ -120,7 +120,7 @@ const getEmployeeDashboard = async (req, res) => {
         // 2. Get task statistics
         const myTasks = await Task.find({ assignedTo: employeeId });
         const pendingTasks = myTasks.filter((t) => t.status === 'pending').length;
-        const acceptedTasks = myTasks.filter((t) => t.status === 'accepted' || t.status === 'in-progress').length;
+        const acceptedTasks = myTasks.filter((t) => t.status === 'accepted').length;
         const completedTasks = myTasks.filter((t) => t.status === 'completed').length;
         const rejectedTasks = myTasks.filter((t) => t.status === 'rejected').length;
 

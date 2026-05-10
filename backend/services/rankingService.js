@@ -50,12 +50,20 @@ async function rankCandidates({
     companyId,
     taskInput,
     requiredSkills = [],
+    department = null,
 }) {
-    const employees = await User.find({
+    const query = {
         companyId,
         role: 'employee',
         isActive: true,
-    }).select('_id fullName email currentWorkload department skills').lean()
+    }
+    
+    // If department is specified (from template), filter employees by department
+    if (department) {
+        query.department = department
+    }
+    
+    const employees = await User.find(query).select('_id fullName email currentWorkload department skills').lean()
 
     const taskEffort = Number(taskInput.effort || 1)
 

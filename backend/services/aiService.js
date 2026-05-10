@@ -4,7 +4,7 @@ const Task = require('../models/Task');
 const User = require('../models/User');
 const Leaderboard = require('../models/Leaderboard');
 
-// Initialize AI clients
+// Initialize AI clients with fallback to mock mode
 const initializeAI = () => {
     const aiProvider = process.env.AI_PROVIDER; // 'gemini' or 'groq'
 
@@ -20,7 +20,12 @@ const initializeAI = () => {
             client: new Groq({ apiKey: process.env.GROQ_API_KEY }),
         };
     } else {
-        throw new Error('No AI provider configured. Set GEMINI_API_KEY or GROQ_API_KEY');
+        // Fallback to mock mode for development/demo
+        console.warn('⚠️ No AI provider configured. Using fallback mock mode. Set AI_PROVIDER, GEMINI_API_KEY or GROQ_API_KEY to enable real AI.');
+        return {
+            provider: 'mock',
+            client: null,
+        };
     }
 };
 
@@ -30,6 +35,23 @@ const initializeAI = () => {
 const detectTaskPriority = async (taskTitle, taskDescription) => {
     try {
         const ai = initializeAI();
+
+        // If in mock mode, use simple heuristics
+        if (ai.provider === 'mock') {
+            const titleLower = (taskTitle || '').toLowerCase();
+            const descLower = (taskDescription || '').toLowerCase();
+            const urgentKeywords = ['urgent', 'critical', 'asap', 'blocker', 'production', 'incident'];
+            const lowKeywords = ['update', 'document', 'cleanup', 'refactor', 'minor'];
+            
+            const text = titleLower + ' ' + descLower;
+            if (urgentKeywords.some(k => text.includes(k))) {
+                return { priority: 'high', confidence: 0.7, reasoning: 'Detected urgent keywords (mock mode)' };
+            }
+            if (lowKeywords.some(k => text.includes(k))) {
+                return { priority: 'low', confidence: 0.6, reasoning: 'Detected routine keywords (mock mode)' };
+            }
+            return { priority: 'medium', confidence: 0.5, reasoning: 'Default to medium priority (mock mode)' };
+        }
 
         const prompt = `
 You are a task priority analyzer for a customer support team.
@@ -132,6 +154,32 @@ const smartAssignTask = async (taskId, companyId) => {
             return {
                 success: false,
                 reason: 'No active employees available',
+            };
+        }
+
+        // If in mock mode, use simple heuristics
+        if (ai.provider === 'mock') {
+            const sortedByWorkload = [...employeeData].sort((a, b) => a.workload - b.workload);
+            const sortedByPerformance = [...employeeData].sort((a, b) => b.performanceScore - a.performanceScore);
+            
+            const recommended = sortedByPerformance.length > 0 ? sortedByPerformance[0] : sortedByWorkload[0];
+            const alternatives = sortedByWorkload.slice(1, 3).map(e => e.name);
+
+            return {
+                success: true,
+                recommendedEmployee: {
+                    id: recommended.id,
+                    name: recommended.name,
+                    email: recommended.email,
+                    department: recommended.department,
+                },
+                analysis: {
+                    reason: `Recommended based on lowest workload (${recommended.workload}h) and performance score (${recommended.performanceScore.toFixed(2)}) - mock mode`,
+                    workloadAfterTask: Math.min(100, recommended.workload + (task.effort || 1)),
+                    riskFactors: recommended.workload > 30 ? ['Employee approaching overload threshold'] : [],
+                    alternatives,
+                },
+                strategy: 'Workload-balanced assignment with performance consideration (mock mode)',
             };
         }
 
@@ -239,6 +287,34 @@ const generateTaskBreakdown = async (taskTitle, taskDescription, taskEffort) => 
     try {
         const ai = initializeAI();
 
+        // If in mock mode, create simple breakdown
+        if (ai.provider === 'mock') {
+            const effortPerTask = Math.ceil(taskEffort / 3);
+            return {
+                subtasks: [
+                    {
+                        title: `Preparation & Setup - ${taskTitle}`,
+                        description: 'Initial research, environment setup, and requirements clarification',
+                        effort: effortPerTask,
+                        priority: 'high',
+                    },
+                    {
+                        title: `Implementation - ${taskTitle}`,
+                        description: 'Main development and implementation work',
+                        effort: effortPerTask,
+                        priority: 'high',
+                    },
+                    {
+                        title: `Testing & Review - ${taskTitle}`,
+                        description: 'Testing, review, and refinement',
+                        effort: taskEffort - (effortPerTask * 2),
+                        priority: 'medium',
+                    },
+                ],
+                breakdownStrategy: 'Standard three-phase breakdown (Prepare, Implement, Test) - mock mode',
+            };
+        }
+
         const prompt = `
 You are a project management expert breaking down complex tasks into subtasks.
 
@@ -345,6 +421,23 @@ const aiDistributeTasks = async (tasks, employees, companyPolicyContext) => {
             return `- ${e.fullName} (${e.department}) | Workload: ${e.currentWorkload}h | Skills: ${skillsStr}`;
         }).join('\n');
 
+        // If in mock mode, use a simple workload-based distribution
+        if (ai.provider === 'mock') {
+            console.log('\n⚡ Using fallback workload-based distribution (mock mode)\n');
+            const sortedEmployees = [...employees].sort((a, b) => (a.currentWorkload || 0) - (b.currentWorkload || 0));
+            
+            const assignments = tasks.map((task, idx) => {
+                const employee = sortedEmployees[idx % sortedEmployees.length];
+                return {
+                    taskTitle: task.title,
+                    assigneeName: employee.fullName,
+                    reason: `Assigned based on lowest workload (${employee.currentWorkload}h) via fallback distribution`
+                };
+            });
+            
+            return { assignments };
+        }
+
         const prompt = `
 You are an expert task distribution engine. Your PRIMARY goal is SKILL MATCHING.
 
@@ -445,6 +538,32 @@ const generatePerformanceInsights = async (companyId) => {
             return { insights: [] };
         }
 
+        // If in mock mode, generate simple insights based on data
+        if (ai.provider === 'mock') {
+            const topPerformer = performanceData[0];
+            const avgCompletion = performanceData.reduce((sum, p) => sum + p.tasksCompleted, 0) / performanceData.length;
+            
+            return {
+                insights: [
+                    {
+                        title: 'Top Performer',
+                        description: `${topPerformer.name} leads the team with ${topPerformer.points} points and ${topPerformer.tasksCompleted} completed tasks`,
+                        recommendation: 'Consider leveraging their expertise for mentoring or complex task assignments',
+                    },
+                    {
+                        title: 'Team Completion Rate',
+                        description: `Average tasks completed per person: ${avgCompletion.toFixed(1)}`,
+                        recommendation: 'Monitor if completion rates are consistent across the team',
+                    },
+                    {
+                        title: 'Department Distribution',
+                        description: `Team is distributed across multiple departments`,
+                        recommendation: 'Ensure cross-team collaboration and knowledge sharing',
+                    },
+                ],
+            };
+        }
+
         const prompt = `
 You are a performance analytics expert analyzing team productivity.
 
@@ -541,7 +660,7 @@ Provide a detailed reasoning in JSON format:
         } else {
             const completion = await ai.client.chat.completions.create({
                 messages: [{ role: 'user', content: prompt }],
-                model: 'llama3-8b-8192',
+                model: 'llama-3.3-70b-versatile',
                 response_format: { type: 'json_object' },
             });
             return JSON.parse(completion.choices[0].message.content);

@@ -211,6 +211,7 @@ const rankCandidatesValidation = [
     body('dueDate').optional({ nullable: true, checkFalsy: true }).isISO8601(),
     body('isMandatory').optional().isBoolean(),
     body('requiredSkills').optional().isArray(),
+    body('department').optional().trim(),
 ]
 
 const createFromTemplateValidation = [
